@@ -57,3 +57,61 @@ test('se rechazan urgencia fuera de 1 a 5, enlaces que no son web y actor sin em
   );
   assert.deepEqual(Object.keys(resultado.errores).sort(), ['actor', 'enlace', 'urgencia']);
 });
+
+const ritual = { organizador: 'jcoto@civitatis.com', suplente: 'fgimenez@civitatis.com' };
+const temaDe = (cambios) =>
+  Object.assign(crearTema(minimos, actor, '2026-11-03').tema, { id: 'DR-001' }, cambios);
+
+test('el responsable edita su tema propuesto o reabierto', () => {
+  for (const estado of ['propuesto', 'reabierto']) {
+    const { ok, tema } = simbolo('editarTema')(
+      temaDe({ estado }),
+      Object.assign({}, minimos, { titulo: 'Nuevo título', urgencia: '4' }),
+      actor
+    );
+    assert.equal(ok, true);
+    assert.equal(tema.titulo, 'Nuevo título');
+    assert.equal(tema.urgencia, 4);
+    assert.equal(tema.estado, estado);
+    assert.equal(tema.id, 'DR-001');
+  }
+});
+
+test('no se edita un tema fuera del backlog ni por quien no es responsable', () => {
+  const editarTema = simbolo('editarTema');
+  for (const estado of ['seleccionado', 'tratado', 'resuelto', 'descartado']) {
+    assert.ok(editarTema(temaDe({ estado }), minimos, actor).errores.estado);
+  }
+  assert.ok(editarTema(temaDe({}), minimos, { email: 'jcoto@civitatis.com' }).errores.actor);
+});
+
+test('al editar se valida igual que al crear', () => {
+  const resultado = simbolo('editarTema')(temaDe({}), { titulo: '', tipo: 'x', duracion: '1' }, actor);
+  assert.deepEqual(Object.keys(resultado.errores).sort(), ['duracion', 'tipo', 'titulo']);
+});
+
+test('descartan el responsable, el organizador y el suplente', () => {
+  const descartarTema = simbolo('descartarTema');
+  for (const email of ['smacarro@civitatis.com', 'JCOTO@civitatis.com', 'fgimenez@civitatis.com']) {
+    const { ok, tema } = descartarTema(temaDe({}), { email }, ritual);
+    assert.equal(ok, true);
+    assert.equal(tema.estado, 'descartado');
+  }
+});
+
+test('el ciclo de vida rechaza el descarte de cualquier otra persona', () => {
+  const resultado = simbolo('descartarTema')(temaDe({}), { email: 'atoca@civitatis.com' }, ritual);
+  assert.equal(resultado.ok, false);
+  assert.ok(resultado.errores.actor);
+});
+
+test('se descarta desde cualquier estado anterior a resuelto, y descartado no es resuelto', () => {
+  const descartarTema = simbolo('descartarTema');
+  for (const estado of ['propuesto', 'seleccionado', 'tratado', 'reabierto']) {
+    assert.equal(descartarTema(temaDe({ estado }), actor, ritual).tema.estado, 'descartado');
+  }
+  for (const estado of ['resuelto', 'descartado']) {
+    assert.ok(descartarTema(temaDe({ estado }), actor, ritual).errores.estado);
+  }
+  assert.notEqual(simbolo('ESTADOS').descartado, simbolo('ESTADOS').resuelto);
+});
