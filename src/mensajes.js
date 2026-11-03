@@ -4,7 +4,9 @@
 // Diálogo de alta de tema. valores: lo que ya escribió la persona (si se reabre por un
 // error); errores: { campo: mensaje } de crearTema.
 // edicion: { id } para usar el mismo diálogo al editar un tema existente.
-function dialogoAltaTema(valores, errores, edicion) {
+// asignables: [{ email, nombre }] si quien abre el diálogo puede asignar el tema a
+// otra persona; quienPropone: su email, que es el responsable por defecto.
+function dialogoAltaTema(valores, errores, edicion, asignables, quienPropone) {
   valores = valores || {};
   errores = errores || {};
   const boton = edicion
@@ -44,6 +46,7 @@ function dialogoAltaTema(valores, errores, edicion) {
         })),
       },
     },
+    ...campoResponsable_(asignables, valores.responsable || quienPropone, quienPropone),
     { divider: {} },
     { textParagraph: { text: '<b>Opcional.</b> Puedes completarlo ahora o cuando confirmes el tema.' } },
     desplegable_(
@@ -142,6 +145,23 @@ function dialogoConfirmarDescarte(tema) {
   };
 }
 
+// Aviso privado al responsable de un tema asignado.
+function textoAvisoAsignacion(tema, quienAsigna) {
+  return (
+    `${quienAsigna} te ha asignado el tema ${tema.id} para la Design Review: «${tema.titulo}».\n` +
+    'Es un compromiso: cuando se seleccione para una sesión, te pediremos que confirmes que lo llevas. ' +
+    'Puedes verlo y editarlo con /mis-temas.'
+  );
+}
+
+// Respuesta a quien asigna, según se haya podido avisar o no al responsable.
+function textoTemaAsignado(tema, avisado) {
+  const aviso = avisado
+    ? `He avisado a ${tema.responsable} por mensaje privado.`
+    : `No he podido avisar a ${tema.responsable}: todavía no ha abierto un chat con la app. Avísale tú.`;
+  return `Tema ${tema.id} asignado a ${tema.responsable}: «${tema.titulo}».\n${aviso}`;
+}
+
 function textoTemaEditado(tema) {
   return `Tema ${tema.id} actualizado: «${tema.titulo}».`;
 }
@@ -158,6 +178,7 @@ function seccionTema_(tema, hoy, permisos, mostrarResponsable) {
     tema.preparacion,
   ];
   if (mostrarResponsable) detalle.unshift(tema.responsable);
+  if (tema.asignado) detalle.push(`asignado por ${tema.proponente}`);
   const botones = [];
   const parametros = [{ key: 'id', value: tema.id }];
   if (permisos.editar)
@@ -179,6 +200,24 @@ function seccionTema_(tema, hoy, permisos, mostrarResponsable) {
   ];
   if (botones.length) widgets.push({ buttonList: { buttons: botones } });
   return { widgets };
+}
+
+function campoResponsable_(asignables, seleccionado, quienPropone) {
+  if (!asignables || !asignables.length) return [];
+  return [
+    {
+      selectionInput: {
+        name: 'responsable',
+        label: 'Responsable (asígnalo a otra persona si hace falta)',
+        type: 'DROPDOWN',
+        items: asignables.map((p) => ({
+          text: p.email === quienPropone ? `${p.nombre} (tú)` : p.nombre,
+          value: p.email,
+          selected: p.email === seleccionado,
+        })),
+      },
+    },
+  ];
 }
 
 function desplegable_(nombre, etiqueta, opciones, seleccionada) {

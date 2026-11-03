@@ -115,3 +115,58 @@ test('se descarta desde cualquier estado anterior a resuelto, y descartado no es
   }
   assert.notEqual(simbolo('ESTADOS').descartado, simbolo('ESTADOS').resuelto);
 });
+
+const jcoto = { email: 'jcoto@civitatis.com' };
+const miembros = ['jcoto@civitatis.com', 'smacarro@civitatis.com', 'atoca@civitatis.com'];
+
+test('el organizador asigna un tema: proponente y responsable distintos, marcado como asignado', () => {
+  const { ok, tema } = crearTema(
+    Object.assign({}, minimos, { responsable: 'Atoca@civitatis.com' }),
+    jcoto,
+    '2026-11-03',
+    { permitida: true, miembros }
+  );
+  assert.equal(ok, true);
+  assert.equal(tema.proponente, 'jcoto@civitatis.com');
+  assert.equal(tema.responsable, 'atoca@civitatis.com');
+  assert.equal(tema.asignado, true);
+});
+
+test('elegirse a uno mismo como responsable no es asignar', () => {
+  const { tema } = crearTema(
+    Object.assign({}, minimos, { responsable: 'jcoto@civitatis.com' }),
+    jcoto,
+    '2026-11-03',
+    { permitida: true, miembros }
+  );
+  assert.equal(tema.asignado, false);
+});
+
+test('no asigna quien no tiene permiso ni a quien no es miembro del espacio', () => {
+  const sinPermiso = crearTema(Object.assign({}, minimos, { responsable: 'atoca@civitatis.com' }), actor, '2026-11-03');
+  assert.ok(sinPermiso.errores.responsable);
+  const ajeno = crearTema(
+    Object.assign({}, minimos, { responsable: 'otra@civitatis.com' }),
+    jcoto,
+    '2026-11-03',
+    { permitida: true, miembros }
+  );
+  assert.ok(ajeno.errores.responsable);
+});
+
+test('asigna el organizador, y el suplente solo si el organizador está ausente', () => {
+  const puedeAsignar = simbolo('puedeAsignar');
+  assert.equal(puedeAsignar(jcoto, ritual, false), true);
+  assert.equal(puedeAsignar({ email: 'fgimenez@civitatis.com' }, ritual, false), false);
+  assert.equal(puedeAsignar({ email: 'fgimenez@civitatis.com' }, ritual, true), true);
+  assert.equal(puedeAsignar(actor, ritual, true), false);
+});
+
+test('el responsable no puede rechazar un tema asignado; el organizador y el suplente sí lo descartan', () => {
+  const asignado = temaDe({ asignado: true, proponente: 'jcoto@civitatis.com' });
+  const rechazo = simbolo('descartarTema')(asignado, actor, ritual);
+  assert.equal(rechazo.ok, false);
+  assert.match(rechazo.errores.actor, /asignado/);
+  assert.equal(simbolo('descartarTema')(asignado, jcoto, ritual).ok, true);
+  assert.equal(simbolo('descartarTema')(asignado, { email: 'fgimenez@civitatis.com' }, ritual).ok, true);
+});

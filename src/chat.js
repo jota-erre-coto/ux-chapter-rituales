@@ -16,7 +16,12 @@ function onRemoveFromSpace(event) {}
 
 function onAppCommand(event) {
   const id = Number(event.chat.appCommandPayload.appCommandMetadata.appCommandId);
-  if (id === COMANDOS.tema) return abrirDialogo_(dialogoAltaTema());
+  if (id === COMANDOS.tema) {
+    const actor = actorDe_(event);
+    const ritual = ritualDelEspacio_(event.chat.appCommandPayload.space);
+    const asignables = ritual && asignablesPara_(ritual, actor);
+    return abrirDialogo_(dialogoAltaTema(null, null, null, asignables, actor.email));
+  }
   if (id === COMANDOS.misTemas) {
     const ritual = ritualDelEspacio_(event.chat.appCommandPayload.space);
     if (!ritual) return mensaje_('Este espacio no tiene ningún ritual configurado.');
@@ -31,13 +36,34 @@ function enviarTema(event) {
   const ritual = ritualDelEspacio_(payload.space);
   if (!ritual) return cerrarConMensaje_('Este espacio no tiene ningún ritual configurado.', event);
 
+  const actor = actorDe_(event);
   const valores = leerFormulario_(event.commonEventObject.formInputs);
   const fechaAlta = Utilities.formatDate(new Date(), ritual.zonaHoraria, 'yyyy-MM-dd');
-  const resultado = crearTema(valores, actorDe_(event), fechaAlta);
-  if (!resultado.ok) return actualizarDialogo_(dialogoAltaTema(valores, resultado.errores));
+  const asignables = asignablesPara_(ritual, actor);
+  const asignacion = {
+    permitida: Boolean(asignables),
+    miembros: (asignables || []).map((p) => p.email),
+  };
+  const resultado = crearTema(valores, actor, fechaAlta, asignacion);
+  if (!resultado.ok) {
+    return actualizarDialogo_(
+      dialogoAltaTema(valores, resultado.errores, null, asignables, actor.email)
+    );
+  }
 
   const tema = guardarTemaNuevo_(ritual, resultado.tema);
-  return cerrarConMensaje_(textoTemaGuardado(tema), event);
+  if (!tema.asignado) return cerrarConMensaje_(textoTemaGuardado(tema), event);
+
+  const quienAsigna = event.chat.user.displayName || actor.email;
+  const avisado = enviarPrivado_(tema.responsable, { text: textoAvisoAsignacion(tema, quienAsigna) });
+  return cerrarConMensaje_(textoTemaAsignado(tema, avisado), event);
+}
+
+// Miembros del espacio del ritual a los que esta persona puede asignar temas, o null
+// si no puede asignar.
+function asignablesPara_(ritual, actor) {
+  if (!puedeAsignar(actor, ritual, organizadorAusente_(ritual))) return null;
+  return miembrosDelEspacio_(ritual.espacio);
 }
 
 // Botón «Editar» de /mis-temas: abre el diálogo de alta con los datos del tema.

@@ -30,6 +30,15 @@ const RITUALES = {
 
 const RITUAL_POR_DEFECTO = 'pruebas';
 
+// Cuenta de servicio que pone la voz de la app en los mensajes que envía por iniciativa propia.
+const CUENTA_SERVICIO_APP = 'rituales-chat-app@ux-chapter-rituales.iam.gserviceaccount.com';
+
+// Si el organizador está ausente, el suplente asume sus funciones. Hasta que el #9
+// lo lea de su calendario, el organizador nunca se considera ausente.
+function organizadorAusente_(ritual) {
+  return false;
+}
+
 function ritualActivo_() {
   const clave =
     PropertiesService.getScriptProperties().getProperty('RITUAL_ACTIVO') || RITUAL_POR_DEFECTO;

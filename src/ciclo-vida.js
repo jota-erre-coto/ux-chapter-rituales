@@ -16,22 +16,34 @@ function estadosDescartables_() {
   return [ESTADOS.propuesto, ESTADOS.seleccionado, ESTADOS.tratado, ESTADOS.reabierto];
 }
 
-// datos: lo que llega del diálogo de alta (texto sin normalizar).
+// datos: lo que llega del diálogo de alta (texto sin normalizar). Si trae un
+// responsable distinto de quien propone, el tema es asignado.
 // actor: { email } de quien propone.
 // fechaAlta: 'AAAA-MM-DD' en la zona horaria del ritual.
+// asignacion: { permitida, miembros: [emails] }; solo hace falta para asignar.
 // Devuelve { ok: true, tema } o { ok: false, errores: { campo: mensaje } }.
-function crearTema(datos, actor, fechaAlta) {
+function crearTema(datos, actor, fechaAlta, asignacion) {
   const { valores, errores } = validarCampos_(datos);
   const email = emailDe_(actor);
   if (!email) errores.actor = 'No se ha podido identificar a quien propone el tema.';
+
+  const responsable = limpiar_(datos.responsable).toLowerCase() || email;
+  const asignado = Boolean(email) && responsable !== email;
+  if (asignado) {
+    asignacion = asignacion || { permitida: false, miembros: [] };
+    if (!asignacion.permitida)
+      errores.responsable = 'Solo el organizador, o el suplente en su ausencia, puede asignar temas.';
+    else if (!asignacion.miembros.includes(responsable))
+      errores.responsable = 'El responsable tiene que ser miembro del espacio.';
+  }
   if (Object.keys(errores).length) return { ok: false, errores };
 
   return {
     ok: true,
     tema: Object.assign(valores, {
       proponente: email,
-      responsable: email,
-      asignado: false,
+      responsable,
+      asignado,
       estado: ESTADOS.propuesto,
       fechaAlta,
       preferencia: false,
@@ -69,6 +81,17 @@ function descartarTema(tema, actor, ritual) {
       errores: { actor: 'Solo el responsable, el organizador o el suplente pueden descartar el tema.' },
     };
   }
+  const esGestor = [ritual.organizador, ritual.suplente]
+    .map((e) => String(e || '').toLowerCase())
+    .includes(email);
+  if (tema.asignado && !esGestor) {
+    return {
+      ok: false,
+      errores: {
+        actor: 'Un tema asignado no se puede rechazar. Si no puedes llevarlo, habla con quien te lo asignó.',
+      },
+    };
+  }
   if (!estadosDescartables_().includes(tema.estado)) {
     return {
       ok: false,
@@ -76,6 +99,14 @@ function descartarTema(tema, actor, ritual) {
     };
   }
   return { ok: true, tema: Object.assign({}, tema, { estado: ESTADOS.descartado }) };
+}
+
+// Asigna temas el organizador, y el suplente solo mientras el organizador está ausente.
+function puedeAsignar(actor, ritual, organizadorAusente) {
+  const email = emailDe_(actor);
+  if (!email) return false;
+  if (email === String(ritual.organizador).toLowerCase()) return true;
+  return Boolean(organizadorAusente) && email === String(ritual.suplente).toLowerCase();
 }
 
 function puedeEditar(tema, actor) {

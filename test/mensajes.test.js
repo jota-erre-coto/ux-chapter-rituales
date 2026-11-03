@@ -58,3 +58,17 @@ test('en edición el diálogo guarda los cambios del tema y no crea uno nuevo', 
   assert.equal(boton.onClick.action.function, 'guardarEdicion');
   assert.equal(boton.onClick.action.parameters[0].value, 'DR-001');
 });
+
+test('el campo Responsable solo aparece para quien puede asignar, con su nombre marcado', () => {
+  const dialogo = conPrioridad('dialogoAltaTema');
+  assert.ok(![...campos(dialogo())].includes('responsable'));
+  const asignables = [
+    { email: 'atoca@civitatis.com', nombre: 'Alberto' },
+    { email: 'jcoto@civitatis.com', nombre: 'Jota' },
+  ];
+  const tarjeta = dialogo(null, null, null, asignables, 'jcoto@civitatis.com');
+  const campo = tarjeta.sections[0].widgets.find((w) => w.selectionInput && w.selectionInput.name === 'responsable');
+  const elegido = campo.selectionInput.items.find((i) => i.selected);
+  assert.equal(elegido.value, 'jcoto@civitatis.com');
+  assert.equal(elegido.text, 'Jota (tú)');
+});
