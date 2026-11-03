@@ -3,5 +3,11 @@
   "dependencies": {},
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8",
-  "chat": {}
+  "addOns": {
+    "common": {
+      "name": "Rituales del Chapter UX",
+      "logoUrl": "https://developers.google.com/chat/images/quickstart-app-avatar.png"
+    },
+    "chat": {}
+  }
 }
