@@ -1,0 +1,12 @@
+{
+  "name": "ux-chapter-rituales",
+  "private": true,
+  "description": "App de Google Chat para los rituales del Chapter de UX",
+  "scripts": {
+    "push": "clasp push",
+    "login": "clasp login"
+  },
+  "devDependencies": {
+    "@google/clasp": "3.4.1"
+  }
+}
