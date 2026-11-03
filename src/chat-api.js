@@ -39,7 +39,7 @@ function personasPorId_(ids) {
   const url =
     `https://people.googleapis.com/v1/people:batchGet?${consulta}` +
     '&personFields=names,emailAddresses&sources=READ_SOURCE_TYPE_PROFILE' +
-    '&sources=READ_SOURCE_TYPE_DOMAIN_PROFILE';
+    '&sources=READ_SOURCE_TYPE_DOMAIN_CONTACT';
   const respuesta = pedir_(url, ScriptApp.getOAuthToken());
   return (respuesta.responses || [])
     .map((r) => r.person || {})

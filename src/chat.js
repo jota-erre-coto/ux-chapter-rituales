@@ -60,10 +60,16 @@ function enviarTema(event) {
 }
 
 // Miembros del espacio del ritual a los que esta persona puede asignar temas, o null
-// si no puede asignar.
+// si no puede asignar. Si la lectura de miembros falla, se registra el error y el
+// diálogo se abre sin el campo Responsable: proponer temas no debe romperse por esto.
 function asignablesPara_(ritual, actor) {
   if (!puedeAsignar(actor, ritual, organizadorAusente_(ritual))) return null;
-  return miembrosDelEspacio_(ritual.espacio);
+  try {
+    return miembrosDelEspacio_(ritual.espacio);
+  } catch (error) {
+    console.error(`No se han podido leer los miembros de ${ritual.espacio}: ${error.stack}`);
+    return null;
+  }
 }
 
 // Botón «Editar» de /mis-temas: abre el diálogo de alta con los datos del tema.
