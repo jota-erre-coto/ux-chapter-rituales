@@ -3,16 +3,18 @@
 
 const LONGITUD_MAX_TITULO = 120;
 
+// Las listas de estados son funciones y no constantes porque Apps Script carga los
+// archivos por orden alfabético y ESTADOS (dominio.js) aún no existe al cargar este.
+
 // Estados en los que el responsable puede editar su tema: los del backlog.
-const ESTADOS_EDITABLES = [ESTADOS.propuesto, ESTADOS.reabierto];
+function estadosEditables_() {
+  return [ESTADOS.propuesto, ESTADOS.reabierto];
+}
 
 // Estados desde los que se puede descartar: cualquiera anterior a resuelto.
-const ESTADOS_DESCARTABLES = [
-  ESTADOS.propuesto,
-  ESTADOS.seleccionado,
-  ESTADOS.tratado,
-  ESTADOS.reabierto,
-];
+function estadosDescartables_() {
+  return [ESTADOS.propuesto, ESTADOS.seleccionado, ESTADOS.tratado, ESTADOS.reabierto];
+}
 
 // datos: lo que llega del diálogo de alta (texto sin normalizar).
 // actor: { email } de quien propone.
@@ -43,7 +45,7 @@ function editarTema(tema, datos, actor) {
   if (emailDe_(actor) !== tema.responsable) {
     return { ok: false, errores: { actor: 'Solo el responsable puede editar este tema.' } };
   }
-  if (!ESTADOS_EDITABLES.includes(tema.estado)) {
+  if (!estadosEditables_().includes(tema.estado)) {
     return {
       ok: false,
       errores: { estado: `El tema está ${tema.estado} y ya no se puede editar.` },
@@ -67,7 +69,7 @@ function descartarTema(tema, actor, ritual) {
       errores: { actor: 'Solo el responsable, el organizador o el suplente pueden descartar el tema.' },
     };
   }
-  if (!ESTADOS_DESCARTABLES.includes(tema.estado)) {
+  if (!estadosDescartables_().includes(tema.estado)) {
     return {
       ok: false,
       errores: { estado: `El tema está ${tema.estado} y ya no se puede descartar.` },
@@ -77,7 +79,7 @@ function descartarTema(tema, actor, ritual) {
 }
 
 function puedeEditar(tema, actor) {
-  return emailDe_(actor) === tema.responsable && ESTADOS_EDITABLES.includes(tema.estado);
+  return emailDe_(actor) === tema.responsable && estadosEditables_().includes(tema.estado);
 }
 
 function puedeDescartar(tema, actor, ritual) {
