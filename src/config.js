@@ -30,6 +30,11 @@ const RITUALES = {
 
 const RITUAL_POR_DEFECTO = 'pruebas';
 
+// Implementación desplegada. Es a la vez la app de Chat y el servicio del registro
+// (aplicación web que se ejecuta como su dueño, ver servicio.js).
+const ID_IMPLEMENTACION = 'AKfycbzn9THSvpW3ezSdVXGcSyltIHalAJ5Zc7QqVJEoeKfZxGt_lShKgHlaAX84Q6xYh8jj';
+const URL_SERVICIO_REGISTRO = `https://script.google.com/a/macros/civitatis.com/s/${ID_IMPLEMENTACION}/exec`;
+
 // Cuenta de servicio que pone la voz de la app en los mensajes que envía por iniciativa propia.
 const CUENTA_SERVICIO_APP = 'rituales-chat-app@ux-chapter-rituales.iam.gserviceaccount.com';
 
@@ -37,6 +42,10 @@ const CUENTA_SERVICIO_APP = 'rituales-chat-app@ux-chapter-rituales.iam.gservicea
 // lo lea de su calendario, el organizador nunca se considera ausente.
 function organizadorAusente_(ritual) {
   return false;
+}
+
+function claveDeRitual_(ritual) {
+  return Object.keys(RITUALES).find((clave) => RITUALES[clave] === ritual);
 }
 
 function ritualActivo_() {

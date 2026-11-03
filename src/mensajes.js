@@ -88,6 +88,11 @@ function dialogoAltaTema(valores, errores, edicion, asignables, quienPropone) {
   return { header: { title: titulo }, sections: [{ widgets }] };
 }
 
+// Diálogo con un único aviso, para cuando un comando que abre diálogo no puede hacerlo.
+function dialogoAviso(texto) {
+  return { header: { title: 'Rituales del Chapter UX' }, sections: [{ widgets: [{ textParagraph: { text: texto } }] }] };
+}
+
 // Texto que recibe quien propone, solo visible para esa persona.
 function textoTemaGuardado(tema) {
   return (

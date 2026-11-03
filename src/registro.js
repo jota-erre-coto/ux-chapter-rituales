@@ -32,6 +32,7 @@ function guardarTemaNuevo_(ritual, tema) {
     const id = siguienteIdTema_(hoja, ritual.prefijoTema);
     const conId = Object.assign({}, tema, { id });
     hoja.appendRow(temaAFila_(conId));
+    protegerHoja_(hoja);
     return conId;
   } finally {
     bloqueo.releaseLock();
@@ -65,9 +66,22 @@ function actualizarTema_(ritual, tema) {
     if (fila < 2) throw new Error(`No existe el tema ${tema.id} en el registro.`);
     const columnas = COLUMNAS_REGISTRO.filter(([campo]) => campo).length;
     hoja.getRange(fila, 1, 1, columnas).setValues([temaAFila_(tema).slice(0, columnas)]);
+    protegerHoja_(hoja);
   } finally {
     bloqueo.releaseLock();
   }
+}
+
+// Protege la hoja para que solo la edite la cuenta que ejecuta el servicio. Los
+// gestores de la unidad pueden quitar la protección, pero no editar sin quitarla.
+function protegerHoja_(hoja) {
+  if (hoja.getProtections(SpreadsheetApp.ProtectionType.SHEET).length) return;
+  const proteccion = hoja.protect().setDescription('Solo la app de rituales edita el registro');
+  proteccion.addEditor(Session.getEffectiveUser());
+  proteccion.removeEditors(
+    proteccion.getEditors().filter((u) => u.getEmail() !== Session.getEffectiveUser().getEmail())
+  );
+  if (proteccion.canDomainEdit()) proteccion.setDomainEdit(false);
 }
 
 // Abre la hoja de temas. Si el registro está vacío, la nombra y escribe las cabeceras.

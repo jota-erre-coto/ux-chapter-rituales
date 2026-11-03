@@ -1,5 +1,6 @@
 // Adaptador de Chat: la app está configurada como complemento de Google Workspace.
-// Recibe los eventos, resuelve el ritual y delega en el dominio y en el registro.
+// Recibe los eventos, resuelve el ritual y delega en el dominio. Lee el registro con
+// la sesión de quien la usa; las escrituras pasan por el servicio del registro.
 
 // IDs de comando tal como están dados de alta en la consola de la Chat API.
 const COMANDOS = { tema: 1, misTemas: 2 };
@@ -24,10 +25,10 @@ function onAppCommand(event) {
   }
   if (id === COMANDOS.misTemas) {
     const ritual = ritualDelEspacio_(event.chat.appCommandPayload.space);
-    if (!ritual) return mensaje_('Este espacio no tiene ningún ritual configurado.');
+    if (!ritual) return abrirDialogo_(dialogoAviso('Este espacio no tiene ningún ritual configurado.'));
     return abrirDialogo_(construirMisTemas_(ritual, actorDe_(event)));
   }
-  return mensaje_('No conozco ese comando.');
+  return abrirDialogo_(dialogoAviso('No conozco ese comando.'));
 }
 
 // Botón «Proponer tema» del diálogo de alta.
@@ -38,28 +39,19 @@ function enviarTema(event) {
 
   const actor = actorDe_(event);
   const valores = leerFormulario_(event.commonEventObject.formInputs);
-  const fechaAlta = Utilities.formatDate(new Date(), ritual.zonaHoraria, 'yyyy-MM-dd');
-  const asignables = asignablesPara_(ritual, actor);
-  const asignacion = {
-    permitida: Boolean(asignables),
-    miembros: (asignables || []).map((p) => p.email),
-  };
-  const resultado = crearTema(valores, actor, fechaAlta, asignacion);
+  const resultado = llamarServicio_('crear', ritual, {
+    valores,
+    nombre: event.chat.user.displayName || '',
+  });
   if (!resultado.ok) {
+    const asignables = asignablesPara_(ritual, actor);
     return actualizarDialogo_(
       dialogoAltaTema(valores, resultado.errores, null, asignables, actor.email)
     );
   }
-
-  const tema = guardarTemaNuevo_(ritual, resultado.tema);
+  const tema = resultado.tema;
   if (!tema.asignado) return cerrarConMensaje_(textoTemaGuardado(tema), event);
-
-  const quienAsigna = event.chat.user.displayName || actor.email;
-  const destinatario = asignables.find((p) => p.email === tema.responsable);
-  const avisado =
-    Boolean(destinatario && destinatario.id) &&
-    enviarPrivado_(destinatario.id, { text: textoAvisoAsignacion(tema, quienAsigna) });
-  return cerrarConMensaje_(textoTemaAsignado(tema, avisado), event);
+  return cerrarConMensaje_(textoTemaAsignado(tema, resultado.avisado), event);
 }
 
 // Miembros del espacio del ritual a los que esta persona puede asignar temas, o null
@@ -87,11 +79,10 @@ function guardarEdicion(event) {
   const contexto = contextoBoton_(event);
   if (contexto.error) return cerrarConMensaje_(contexto.error, event);
   const valores = leerFormulario_(event.commonEventObject.formInputs);
-  const resultado = editarTema(contexto.tema, valores, actorDe_(event));
+  const resultado = llamarServicio_('editar', contexto.ritual, { id: contexto.tema.id, valores });
   if (!resultado.ok) {
     return actualizarDialogo_(dialogoAltaTema(valores, resultado.errores, { id: contexto.tema.id }));
   }
-  actualizarTema_(contexto.ritual, resultado.tema);
   return cerrarConMensaje_(textoTemaEditado(resultado.tema), event);
 }
 
@@ -105,9 +96,8 @@ function pedirDescarte(event) {
 function descartarMiTema(event) {
   const contexto = contextoBoton_(event);
   if (contexto.error) return cerrarConMensaje_(contexto.error, event);
-  const resultado = descartarTema(contexto.tema, actorDe_(event), contexto.ritual);
+  const resultado = llamarServicio_('descartar', contexto.ritual, { id: contexto.tema.id });
   if (!resultado.ok) return cerrarConMensaje_(Object.values(resultado.errores).join(' '), event);
-  actualizarTema_(contexto.ritual, resultado.tema);
   return cerrarConMensaje_(textoTemaDescartado(resultado.tema), event);
 }
 

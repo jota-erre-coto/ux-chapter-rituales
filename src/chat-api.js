@@ -3,14 +3,17 @@
 //
 // La voz de la app es la cuenta de servicio CUENTA_SERVICIO_APP. No tiene claves:
 // la app pide un token temporal con la sesión de quien la usa, que necesita el rol
-// «Creador de tokens de cuenta de servicio» sobre ella (hoy, jcoto y el suplente).
+// «Creador de tokens de cuenta de servicio» sobre ella. Lo tienen jcoto y el suplente;
+// el resto de personas solo llega aquí a través del servicio del registro, que se
+// ejecuta como su dueño.
 
 const CHAT_API = 'https://chat.googleapis.com/v1';
 const MINUTOS_CACHE_MIEMBROS = 60;
 
 // Miembros humanos del espacio como [{ email, nombre, id }], ordenados por nombre.
 // id es el usuario de Chat (users/123…), que la app necesita para escribirle.
-// Se leen con la sesión de quien usa la app y se guardan en caché una hora.
+// La lista la lee la app (no hace falta que quien la usa sea miembro) y los emails
+// salen del directorio con la sesión de quien la usa. Se guarda en caché una hora.
 function miembrosDelEspacio_(espacio) {
   const cache = CacheService.getScriptCache();
   const clave = `miembros:v2:${espacio}`;
@@ -21,7 +24,7 @@ function miembrosDelEspacio_(espacio) {
   let pagina = '';
   do {
     const url = `${CHAT_API}/${espacio}/members?pageSize=100${pagina ? `&pageToken=${pagina}` : ''}`;
-    const respuesta = pedir_(url, ScriptApp.getOAuthToken());
+    const respuesta = pedir_(url, tokenApp_());
     (respuesta.memberships || [])
       .filter((m) => m.member && m.member.type === 'HUMAN')
       .forEach((m) => ids.push(m.member.name.replace('users/', '')));

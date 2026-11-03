@@ -6,10 +6,15 @@
   "oauthScopes": [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/script.external_request",
-    "https://www.googleapis.com/auth/chat.memberships.readonly",
     "https://www.googleapis.com/auth/directory.readonly",
-    "https://www.googleapis.com/auth/iam"
+    "https://www.googleapis.com/auth/iam",
+    "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/userinfo.email"
   ],
+  "webapp": {
+    "executeAs": "USER_DEPLOYING",
+    "access": "DOMAIN"
+  },
   "addOns": {
     "common": {
       "name": "Rituales del Chapter UX",
