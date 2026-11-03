@@ -55,7 +55,10 @@ function enviarTema(event) {
   if (!tema.asignado) return cerrarConMensaje_(textoTemaGuardado(tema), event);
 
   const quienAsigna = event.chat.user.displayName || actor.email;
-  const avisado = enviarPrivado_(tema.responsable, { text: textoAvisoAsignacion(tema, quienAsigna) });
+  const destinatario = asignables.find((p) => p.email === tema.responsable);
+  const avisado =
+    Boolean(destinatario && destinatario.id) &&
+    enviarPrivado_(destinatario.id, { text: textoAvisoAsignacion(tema, quienAsigna) });
   return cerrarConMensaje_(textoTemaAsignado(tema, avisado), event);
 }
 

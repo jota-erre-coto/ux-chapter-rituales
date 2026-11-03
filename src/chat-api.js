@@ -8,11 +8,12 @@
 const CHAT_API = 'https://chat.googleapis.com/v1';
 const MINUTOS_CACHE_MIEMBROS = 60;
 
-// Miembros humanos del espacio como [{ email, nombre }], ordenados por nombre.
+// Miembros humanos del espacio como [{ email, nombre, id }], ordenados por nombre.
+// id es el usuario de Chat (users/123…), que la app necesita para escribirle.
 // Se leen con la sesión de quien usa la app y se guardan en caché una hora.
 function miembrosDelEspacio_(espacio) {
   const cache = CacheService.getScriptCache();
-  const clave = `miembros:${espacio}`;
+  const clave = `miembros:v2:${espacio}`;
   const guardado = cache.get(clave);
   if (guardado) return JSON.parse(guardado);
 
@@ -42,28 +43,29 @@ function personasPorId_(ids) {
     '&sources=READ_SOURCE_TYPE_DOMAIN_CONTACT';
   const respuesta = pedir_(url, ScriptApp.getOAuthToken());
   return (respuesta.responses || [])
-    .map((r) => r.person || {})
-    .map((p) => {
+    .map((r) => {
+      const p = r.person || {};
       const email = ((p.emailAddresses || [])[0] || {}).value || '';
       const nombre = ((p.names || [])[0] || {}).displayName || email;
-      return { email: email.toLowerCase(), nombre };
+      const id = String(r.requestedResourceName || '').replace('people/', 'users/');
+      return { email: email.toLowerCase(), nombre, id };
     })
     .filter((p) => p.email);
 }
 
-// Envía un mensaje privado de la app a una persona. Devuelve false si esa persona
-// todavía no ha abierto nunca un chat directo con la app.
-function enviarPrivado_(email, mensaje) {
-  const token = tokenApp_();
-  let espacio;
+// Envía un mensaje privado de la app a un usuario de Chat (users/123…). La app no
+// puede buscar a nadie por email. Devuelve false si no se ha podido entregar, por
+// ejemplo porque esa persona nunca ha abierto un chat directo con la app.
+function enviarPrivado_(usuario, mensaje) {
   try {
-    espacio = pedir_(`${CHAT_API}/spaces:findDirectMessage?name=users/${email}`, token).name;
+    const token = tokenApp_();
+    const espacio = pedir_(`${CHAT_API}/spaces:findDirectMessage?name=${usuario}`, token).name;
+    pedir_(`${CHAT_API}/${espacio}/messages`, token, mensaje);
+    return true;
   } catch (error) {
-    if (String(error.message).includes('404')) return false;
-    throw error;
+    console.error(`No se ha podido enviar un mensaje privado a ${usuario}: ${error.message}`);
+    return false;
   }
-  pedir_(`${CHAT_API}/${espacio}/messages`, token, mensaje);
-  return true;
 }
 
 // Token de la cuenta de servicio con el permiso de app de Chat, cacheado por usuario.
