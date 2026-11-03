@@ -12,7 +12,7 @@ function onMessage(event) {
   return mensaje_('Usa /tema para proponer un tema.');
 }
 
-function onRemoveFromSpace(event) {}
+function onRemovedFromSpace(event) {}
 
 function onAppCommand(event) {
   const id = Number(event.chat.appCommandPayload.appCommandMetadata.appCommandId);
