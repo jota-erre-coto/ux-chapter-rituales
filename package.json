@@ -4,7 +4,8 @@
   "description": "App de Google Chat para los rituales del Chapter de UX",
   "scripts": {
     "push": "clasp push",
-    "login": "clasp login"
+    "login": "clasp login",
+    "test": "node --test test/*.test.js"
   },
   "devDependencies": {
     "@google/clasp": "3.4.1"
