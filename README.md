@@ -58,3 +58,10 @@ pnpm exec clasp update-deployment <ID_IMPLEMENTACION> -d "pruebas"
 ```
 
 Apps Script carga los archivos de `src/` por orden alfabético. Ningún archivo puede usar, al cargarse, algo definido en otro. El test `test/carga.test.js` lo comprueba.
+
+## Flujo de trabajo
+
+- Cada issue se trabaja en su propia rama (`issue-<número>-<tema>`, por ejemplo `issue-9-ausencia`), nunca directamente en `main`.
+- Al terminar, se abre un PR contra `main` cuya descripción incluye `Closes #<número>`, para que el issue se cierre al fusionarlo.
+- Antes de fusionar: `pnpm test` en verde y el cambio probado en el entorno de pruebas cuando afecta a Chat.
+- Se fusiona con squash, para que cada issue quede como un único commit en `main`, y se borra la rama.
