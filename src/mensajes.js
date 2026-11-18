@@ -66,6 +66,7 @@ function dialogoAltaTema(valores, errores, edicion, asignables, quienPropone) {
         name: 'contexto',
         label: 'Contexto',
         type: 'MULTIPLE_LINE',
+        hintText: 'Qué está en juego y qué necesitas del Chapter. Admite varias líneas.',
         value: valores.contexto || '',
       },
     },
