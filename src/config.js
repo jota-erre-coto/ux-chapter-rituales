@@ -42,12 +42,6 @@ const URL_SERVICIO_REGISTRO = `https://script.google.com/a/macros/civitatis.com/
 // Cuenta de servicio que pone la voz de la app en los mensajes que envía por iniciativa propia.
 const CUENTA_SERVICIO_APP = 'rituales-chat-app@ux-chapter-rituales.iam.gserviceaccount.com';
 
-// Si el organizador está ausente, el suplente asume sus funciones. Hasta que el #9
-// lo lea de su calendario, el organizador nunca se considera ausente.
-function organizadorAusente_(ritual) {
-  return false;
-}
-
 function claveDeRitual_(ritual) {
   return Object.keys(RITUALES).find((clave) => RITUALES[clave] === ritual);
 }

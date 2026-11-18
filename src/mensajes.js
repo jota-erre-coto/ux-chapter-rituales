@@ -390,6 +390,9 @@ function mensajePropuesta(ritual, propuesta, seleccion, sustitutos, hoy) {
   });
 
   const pie = [`${minutos} de ${ritual.duracionSesionMin} minutos.`];
+  if (propuesta.enSustitucion && !confirmada) {
+    pie.unshift(`Te llega a ti porque ${ritual.organizador} está fuera de la oficina.`);
+  }
   if (sustitutos.length) pie.push(`Sustitutos si alguien no confirma: ${sustitutos.map((t) => t.id).join(', ')}.`);
   if (!confirmada) {
     pie.push(

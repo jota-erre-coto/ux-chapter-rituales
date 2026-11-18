@@ -50,3 +50,18 @@ function sumarMinutos_(local, minutos) {
   d.setUTCMinutes(d.getUTCMinutes() + minutos);
   return d.toISOString().slice(0, 16);
 }
+
+// ¿Está ausente el organizador ese día? ausencias: eventos de fuera de la oficina como
+// [{ desde, hasta }] en hora local 'AAAA-MM-DDTHH:mm'; fecha: 'AAAA-MM-DD'. Basta con
+// que una ausencia toque cualquier momento del día.
+function ausenteEseDia(ausencias, fecha) {
+  const inicio = `${fecha}T00:00`;
+  const fin = `${sumarDias(fecha, 1)}T00:00`;
+  return (ausencias || []).some((a) => a.desde < fin && a.hasta > inicio);
+}
+
+// A quién van la propuesta y las excepciones: al organizador, o al suplente si el
+// organizador está ausente.
+function destinatarioGestion(ritual, organizadorAusente) {
+  return organizadorAusente ? ritual.suplente : ritual.organizador;
+}
