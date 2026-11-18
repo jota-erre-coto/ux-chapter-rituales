@@ -31,7 +31,7 @@ function lanzarPropuesta_(ritual, { sesion, lunes }) {
   const hoy = hoyDe_(ritual);
   const temas = leerTemas_(ritual);
   const { seleccion } = proponerSeleccion(temas, hoy, ritual.duracionSesionMin);
-  const destinatario = destinatarioGestion(ritual, organizadorAusente_(ritual));
+  const destinatario = destinatarioGestion(ritual, organizadorAusente_(ritual, { sinCache: true }));
   const propuesta = {
     claveRitual, lunes, sesion, ids: seleccion.map((t) => t.id), estado: 'pendiente',
     enSustitucion: destinatario !== ritual.organizador,
@@ -51,7 +51,7 @@ function lanzarPropuesta_(ritual, { sesion, lunes }) {
 function revisarConfirmacionPropuesta_(ritual, { sesion, lunes }) {
   const propuesta = leerPropuesta_(claveDeRitual_(ritual), lunes);
   if (propuesta && propuesta.estado === 'confirmada') return;
-  const destinatario = destinatarioGestion(ritual, organizadorAusente_(ritual));
+  const destinatario = destinatarioGestion(ritual, organizadorAusente_(ritual, { sinCache: true }));
   enviarPrivadoPorEmail_(ritual, destinatario, mensajeSinConfirmar(ritual, sesion));
 }
 

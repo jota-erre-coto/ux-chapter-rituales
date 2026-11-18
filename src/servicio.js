@@ -29,7 +29,9 @@ function doPost(e) {
 const OPERACIONES_SERVICIO_ = {
   crear(ritual, actor, { valores }) {
     const fechaAlta = Utilities.formatDate(new Date(), ritual.zonaHoraria, 'yyyy-MM-dd');
-    const permitida = puedeAsignar(actor, ritual, organizadorAusente_(ritual));
+    // La ausencia solo importa si quien crea es el suplente; para el resto no se lee.
+    const ausente = actor.email === ritual.suplente && organizadorAusente_(ritual, { directo: true });
+    const permitida = puedeAsignar(actor, ritual, ausente);
     const miembros = permitida ? miembrosDelEspacio_(ritual.espacio) : [];
     const resultado = crearTema(valores, actor, fechaAlta, {
       permitida,
@@ -73,7 +75,7 @@ const OPERACIONES_SERVICIO_ = {
   // Si el organizador está fuera de la oficina hoy. Solo lo puede leer su cuenta, que
   // es la que ejecuta el servicio.
   ausencia(ritual) {
-    return { ok: true, ausente: organizadorAusente_(ritual) };
+    return { ok: true, ausente: organizadorAusente_(ritual, { directo: true, sinCache: true }) };
   },
 
   descartar(ritual, actor, { id }) {
