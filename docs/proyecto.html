@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Design Review se prepara casi sola · Rituales del Chapter UX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ─── TOKENS ────────────────────────────────────────────────────── */
+:root {
+  --primary:            #EA0558;
+  --primary-hover:      #C2044B;
+  --primary-light:      #FFEAF1;
+  --primary-pink-light: #FF80B0;
+
+  --neutral-50:         #FFFFFF;
+  --neutral-100:        #F7F7F7;
+  --neutral-200:        #EAEAEA;
+  --neutral-300:        #CFCFCF;
+  --neutral-500:        #8C8C8C;
+  --neutral-600:        #666666;
+  --neutral-800:        #333333;
+
+  --background:         #FFFFFF;
+  --surface:            #F7F7F7;
+  --surface-muted:      #F7F7F7;
+  --surface-muted-dark: #EAEAEA;
+  --foreground:         #333333;
+  --foreground-light:   #666666;
+  --foreground-lighter: #8C8C8C;
+  --border:             #CFCFCF;
+  --line:               #EAEAEA;
+  --card:               #FFFFFF;
+
+  --success:       #00825B;  --success-light: #ECFBF4;
+  --error:         #C53F37;  --error-light:   #FFF6F7;
+  --warning:       #F8C316;  --warning-light: #FFF9E1;  --warning-dark: #8F4C13;
+  --info:          #098AC3;  --info-light:    #F2FAFD;  --info-fg: #055A80;
+  --purple:        #812584;  --purple-light:  #F1DDF2;
+
+  --elevation-sm: 0 2px 8px  0 rgba(51,51,51,.10);
+  --elevation-md: 0 4px 16px 0 rgba(51,51,51,.10);
+  --elevation-lg: 0 4px 32px 0 rgba(51,51,51,.10);
+
+  --radius-default: 4px;
+  --radius-lg:      8px;
+  --radius-xl:      16px;
+  --radius-pill:    999px;
+
+  --space-xs: 4px; --space-sm: 8px; --space-md: 12px; --space-lg: 16px;
+  --space-xl: 24px; --space-2xl: 32px; --space-3xl: 48px; --space-4xl: 64px; --space-5xl: 80px;
+
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px;
+  --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px;
+  --s12: 48px; --s16: 64px;
+
+  --font: "Montserrat", "Inter", "Helvetica Neue", sans-serif;
+  --mono: "JetBrains Mono", monospace;
+
+  --duration-fast:  150ms;
+  --duration-base:  240ms;
+  --duration-slow:  500ms;
+  --ease-out:       cubic-bezier(.2, .8, .2, 1);
+  --ease-in-out:    cubic-bezier(.4, 0, .2, 1);
+}
+
+/* ─── SKIP LINK ──────────────────────────────────────────────────── */
+.skip-link { position: absolute; top: -40px; left: 0; background: var(--primary); color: #fff; padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 0 0 var(--radius-default) 0; z-index: 9999; transition: top .15s; }
+.skip-link:focus { top: 0; }
+
+/* ─── RESET ──────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+  text-wrap: pretty;
+  font-variant-numeric: tabular-nums;
+}
+h1, h2, h3, h4 { text-wrap: balance; }
+::selection { background: var(--primary-light); color: var(--foreground); }
+
+/* ─── LAYOUT ─────────────────────────────────────────────────────── */
+.wrap { max-width: 900px; margin: 0 auto; padding: 0 40px; }
+section { padding: 72px 0; }
+section.alt { background: var(--surface); }
+
+/* ─── HERO ───────────────────────────────────────────────────────── */
+.hero {
+  background: linear-gradient(135deg, #0f0f1e 0%, #1a0a2e 50%, #2a0a1e 100%);
+  padding: var(--space-5xl) 0 var(--space-4xl);
+  position: relative; overflow: hidden;
+  min-height: 100dvh;
+  display: flex; align-items: center;
+}
+.hero-inner { width: 100%; }
+.hero::before {
+  content: ""; position: absolute;
+  top: -100px; right: -60px; width: 480px; height: 480px;
+  background: radial-gradient(circle, rgba(234,5,88,0.18) 0%, transparent 65%);
+  pointer-events: none;
+  animation: drift-a 18s ease-in-out infinite;
+}
+.hero::after {
+  content: ""; position: absolute;
+  bottom: -80px; left: -20px; width: 320px; height: 320px;
+  background: radial-gradient(circle, rgba(129,37,132,0.15) 0%, transparent 65%);
+  pointer-events: none;
+  animation: drift-b 22s ease-in-out infinite;
+}
+@keyframes drift-a {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(20px, -10px); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(-15px, 12px); }
+}
+.hero-badge {
+  display: inline-flex; align-items: center;
+  background: rgba(234,5,88,0.12);
+  border: 1px solid rgba(234,5,88,0.30);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  color: #FF80B0;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: var(--s5);
+}
+
+/* ─── TEXT ECHO ──────────────────────────────────────────────────── */
+.hero h1 {
+  color: #fff;
+  font-size: 48px; font-weight: 700; line-height: 1.1;
+  letter-spacing: -0.5px;
+  margin-bottom: var(--s5);
+  position: relative;
+}
+.hero h1::before {
+  content: attr(data-text);
+  position: absolute; inset: 0;
+  color: rgba(255,255,255,0.06);
+  transform: translate(5px, 7px);
+  pointer-events: none;
+  user-select: none;
+  z-index: -1;
+}
+.hero h1 .accent { color: #FF80B0; }
+.hero-lede {
+  font-size: 17px; color: rgba(255,255,255,0.72);
+  line-height: 1.65;
+  font-style: italic;
+}
+
+/* ─── KPI CARDS — LIQUID GLASS ───────────────────────────────────── */
+.hero-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: var(--space-3xl);
+}
+.kpi-card {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+  border-radius: var(--radius-xl);
+  padding: 20px 24px;
+  text-align: center;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.kpi-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: rgba(255,255,255,.5);
+  margin-bottom: 8px;
+}
+.kpi-value {
+  font-size: 40px;
+  font-weight: 800;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -2px;
+  line-height: 1;
+}
+.kpi-delta {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+.kpi-delta--up      { color: var(--surface-green); }
+.kpi-delta--down    { color: var(--error-light); }
+.kpi-delta--neutral { color: rgba(255,255,255,.7); }
+
+/* ─── MARQUEE ─────────────────────────────────────────────────────── */
+.marquee-strip {
+  background: var(--primary);
+  padding: 12px 0;
+  overflow: hidden;
+}
+.marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+.marquee-track {
+  display: flex;
+  gap: 24px;
+  width: max-content;
+  animation: marquee 26s linear infinite;
+  align-items: center;
+}
+.marquee-track span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.marquee-dot { opacity: .5; }
+.marquee-strip:hover .marquee-track { animation-play-state: paused; }
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ─── SECTION HEADERS ────────────────────────────────────────────── */
+.section-hd { margin-bottom: var(--s10); }
+.overline {
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  color: var(--primary); margin-bottom: var(--s3);
+}
+.section-hd h2 {
+  font-size: 26px; font-weight: 700; line-height: 1.25;
+  color: var(--foreground); margin-bottom: var(--s4);
+}
+.section-hd p {
+  font-size: 15px; color: var(--foreground-light);
+  line-height: 1.65;
+}
+
+/* ─── YES / NO GRID ──────────────────────────────────────────────── */
+.yn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s5); }
+.yn-card { border-radius: var(--radius-xl); border: 1px solid var(--line); overflow: hidden; box-shadow: var(--elevation-sm); }
+.yn-card__head { padding: var(--s4) var(--s6); display: flex; align-items: center; gap: var(--s3); }
+.yn-card--yes .yn-card__head { background: var(--success-light); }
+.yn-card--no  .yn-card__head { background: var(--error-light); }
+.yn-icon { width: 26px; height: 26px; border-radius: var(--radius-pill); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.yn-card--yes .yn-icon { background: var(--success); color: #fff; }
+.yn-card--no  .yn-icon { background: var(--error); color: #fff; }
+.yn-card__head h4 { font-size: 14px; font-weight: 700; color: var(--foreground); }
+.yn-card__body { padding: var(--s5) var(--s6); background: var(--card); }
+.yn-list { list-style: none; display: flex; flex-direction: column; gap: var(--s3); }
+.yn-list li { font-size: 13px; color: var(--foreground-light); padding-left: 18px; position: relative; line-height: 1.55; }
+.yn-card--yes .yn-list li::before { content: "✓"; position: absolute; left: 0; color: var(--success); font-weight: 700; font-size: 12px; }
+.yn-card--no  .yn-list li::before { content: "✕"; position: absolute; left: 0; color: var(--error); font-weight: 700; font-size: 12px; }
+
+/* Wave divider standalone */
+.wave-divider { height: 60px; background: var(--surface); clip-path: ellipse(56% 100% at 50% 0%); margin-top: -2px; }
+.wave-divider--to-bg { background: var(--background); }
+
+/* ─── STEPS / STEPPER ────────────────────────────────────────────── */
+.stepper { display: flex; flex-direction: column; gap: 0; }
+.stepper-step { display: flex; gap: 20px; align-items: flex-start; padding-bottom: 24px; position: relative; }
+.stepper-step:last-child { padding-bottom: 0; }
+.stepper-step:not(:last-child)::before {
+  content: ""; position: absolute;
+  left: 15px; top: calc(2px + 32px); bottom: 0;
+  width: 2px; background: var(--line);
+}
+.stepper-num {
+  width: 32px; height: 32px; border-radius: var(--radius-pill);
+  background: var(--primary); color: #fff;
+  font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px; position: relative; z-index: 1;
+}
+.stepper-body { flex: 1; min-width: 0; padding-top: 4px; }
+.stepper-body h4 { font-size: 15px; font-weight: 700; color: var(--foreground); margin-bottom: 4px; line-height: 1.3; }
+.stepper-body p  { font-size: 13px; color: var(--foreground-light); line-height: 1.6; margin: 0; }
+.stepper-tag {
+  display: inline-flex; margin-top: 8px; padding: 2px 9px;
+  border-radius: var(--radius-pill); font-size: 10px; font-weight: 700;
+  letter-spacing: .3px; text-transform: uppercase; white-space: nowrap;
+}
+.stepper-tag--info { background: var(--info-light); color: var(--info); border: 1px solid rgba(9,138,195,.22); }
+
+/* ─── TABS ───────────────────────────────────────────────────────── */
+.tabs { width: 100%; }
+.tabs-list { display: inline-flex; gap: 4px; background: var(--surface-muted-dark); border-radius: var(--radius-lg); padding: 4px; margin-bottom: 16px; }
+.tabs-trigger {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 16px; border-radius: var(--radius-default);
+  font-size: 13px; font-weight: 600;
+  color: var(--foreground-light); background: transparent; border: none;
+  cursor: pointer; transition: all .15s; white-space: nowrap; font-family: var(--font);
+}
+.tabs-trigger:hover { color: var(--foreground); background: rgba(0,0,0,.04); }
+.tabs-trigger.active { background: var(--card); color: var(--foreground); box-shadow: var(--elevation-sm); }
+.tabs-panel { display: none; }
+.tabs-panel.active { display: block; }
+
+/* ─── VARIANT CARDS ──────────────────────────────────────────────── */
+.variants-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s5); }
+.variant-card {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius-xl); padding: var(--s6);
+  box-shadow: var(--elevation-sm);
+}
+.variant-card__dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-bottom: var(--s3); }
+.variant-card.v-alt .variant-card__dot  { background: var(--purple); }
+.variant-card.v-warn .variant-card__dot { background: var(--warning); }
+.variant-card.v-info .variant-card__dot { background: var(--info); }
+.variant-card__icon { font-size: 26px; margin-bottom: var(--s4); }
+.variant-card h4 { font-size: 15px; font-weight: 700; color: var(--foreground); margin-bottom: var(--s2); }
+.variant-card p  { font-size: 13px; color: var(--foreground-light); line-height: 1.6; margin-bottom: var(--s4); }
+.variant-tag {
+  display: inline-flex; padding: 3px 10px;
+  background: var(--surface-muted); border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  font-size: 11px; font-weight: 600; color: var(--foreground-lighter);
+}
+
+/* ─── TRIGGER LIST ───────────────────────────────────────────────── */
+.trigger-list { display: flex; flex-direction: column; gap: var(--s4); }
+.trigger-item {
+  display: flex; gap: var(--s4); align-items: flex-start;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius-lg); padding: var(--s4) var(--s5);
+  box-shadow: var(--elevation-sm);
+}
+.trigger-item__rank {
+  width: 28px; height: 28px; border-radius: var(--radius-pill);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+}
+.trigger-item__rank.r-error { background: var(--error-light); color: var(--error); }
+.trigger-item__rank.r-warn  { background: var(--warning-light); color: var(--warning-dark); }
+.trigger-item__rank.r-info  { background: var(--info-light); color: var(--info-fg); }
+.trigger-item__body h4 { font-size: 14px; font-weight: 700; color: var(--foreground); margin-bottom: 3px; }
+.trigger-item__body p  { font-size: 13px; color: var(--foreground-light); margin: 0; line-height: 1.55; }
+
+/* ─── ASYMMETRIC GRIDS ───────────────────────────────────────────── */
+.use-cases-grid, .resources-grid-asym {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+}
+
+/* ─── FAQ ACCORDION ──────────────────────────────────────────────── */
+.faq-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden; }
+.faq-item { border-bottom: 1px solid var(--line); }
+.faq-item:last-child { border-bottom: none; }
+.faq-item summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 16px 20px; cursor: pointer; list-style: none;
+  font-size: 14px; font-weight: 700; color: var(--foreground);
+  background: var(--card); transition: background var(--duration-fast) var(--ease-out);
+  user-select: none;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary:hover { background: var(--surface-muted); }
+.faq-item[open] > summary { background: var(--primary-light); border-bottom: 1px solid rgba(234,5,88,.15); }
+.faq-chevron {
+  flex-shrink: 0; width: 18px; height: 18px;
+  border-radius: var(--radius-pill); background: var(--surface-muted-dark);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: var(--foreground-lighter); font-style: normal;
+  transition: transform var(--duration-base) var(--ease-out), background var(--duration-fast), color var(--duration-fast);
+}
+.faq-item[open] > summary .faq-chevron { transform: rotate(180deg); background: rgba(234,5,88,.15); color: var(--primary); }
+.faq-answer { padding: 0 20px 18px; font-size: 14px; color: var(--foreground-light); line-height: 1.65; background: var(--card); }
+.faq-answer p { margin-top: 12px; }
+.faq-answer ul { margin: 10px 0 0 18px; display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: var(--foreground-light); }
+.faq-answer code { font-family: var(--mono); font-size: 12px; background: var(--surface-muted); padding: 1px 5px; border-radius: 3px; color: var(--foreground); }
+
+/* ─── RESOURCE CARDS ─────────────────────────────────────────────── */
+.resources-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); }
+.resource-card {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius-xl); padding: var(--s5) var(--s5) var(--s4);
+  box-shadow: var(--elevation-sm); display: flex; flex-direction: column;
+  transition: box-shadow var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-out);
+}
+.resource-card:hover { box-shadow: var(--elevation-md); transform: translateY(-2px); }
+.resource-card__icon { font-size: 24px; margin-bottom: var(--s3); }
+.resource-card h4 { font-size: 13px; font-weight: 700; color: var(--foreground); margin-bottom: 4px; }
+.resource-card p  { font-size: 12px; color: var(--foreground-lighter); line-height: 1.5; flex: 1; margin-bottom: var(--s3); }
+.resource-card__link { font-size: 12px; font-weight: 700; color: var(--primary); text-decoration: none; }
+.resource-card__link:hover { text-decoration: underline; }
+
+/* ─── CALLOUT ────────────────────────────────────────────────────── */
+.callout {
+  background: var(--primary-light); border: 1px solid rgba(234,5,88,0.20);
+  border-radius: var(--radius-lg); padding: var(--s5) var(--s6);
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.callout__icon { font-size: 22px; line-height: 1; flex-shrink: 0; margin-top: 1px; }
+.callout__body h4 { font-size: 14px; font-weight: 700; color: var(--foreground); margin-bottom: var(--s2); }
+.callout__body p  { font-size: 14px; color: var(--foreground-light); line-height: 1.6; margin: 0; }
+
+/* ─── BRIEF → OUTPUT CARD ────────────────────────────────────────── */
+.example-card { border: 1px solid var(--border); border-radius: 20px; background: var(--card); padding: 32px; box-shadow: var(--elevation-sm); }
+.example-col-label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--foreground-lighter); font-weight: 600; margin: 0 0 16px; }
+.example-dl { font-family: var(--mono); font-size: 13px; line-height: 1.8; display: flex; flex-direction: column; }
+.example-dl-row { display: grid; grid-template-columns: 140px 1fr; gap: 12px; }
+.example-dl-row--sep { margin-top: 16px; }
+.example-dt { color: var(--foreground-lighter); margin: 0; font-size: 13px; }
+.example-dd { color: var(--foreground-light); margin: 0; font-size: 13px; }
+
+/* ─── META QUOTE ─────────────────────────────────────────────────── */
+.meta-wrap { background: var(--purple-light); padding: 72px 0; }
+.meta-card {
+  background: var(--card); border-radius: var(--radius-xl); overflow: hidden;
+  box-shadow: var(--elevation-lg); max-width: 640px; margin: 0 auto;
+}
+.meta-card__head {
+  background: var(--surface); padding: var(--s3) var(--s6);
+  display: flex; align-items: center; gap: var(--s3);
+  border-bottom: 1px solid var(--line);
+}
+.meta-dot { width: 8px; height: 8px; border-radius: var(--radius-pill); background: var(--purple); }
+.meta-card__head span { font-size: 11px; font-weight: 600; color: var(--foreground-lighter); }
+.meta-card__body { padding: var(--s8) var(--s10); }
+.meta-quote { font-size: 18px; font-weight: 500; line-height: 1.6; color: var(--foreground); margin-bottom: var(--s6); }
+.meta-quote strong { color: var(--primary); font-weight: 700; }
+.meta-attr { display: flex; align-items: center; gap: var(--s4); }
+.meta-avatar {
+  width: 36px; height: 36px; border-radius: var(--radius-pill);
+  background: var(--purple-light); display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.meta-info__role { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--foreground-lighter); }
+.meta-info__name { font-size: 13px; font-weight: 600; color: var(--foreground); }
+
+/* ─── REVEAL ─────────────────────────────────────────────────────── */
+.reveal {
+  opacity: 0; transform: translateY(16px);
+  transition: opacity var(--duration-slow) var(--ease-out),
+              transform var(--duration-slow) var(--ease-out);
+}
+.reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+/* ─── FOOTER ─────────────────────────────────────────────────────── */
+footer { background: var(--foreground); padding: var(--space-2xl) 0; text-align: center; }
+footer.footer--gradient { background: linear-gradient(135deg, #0f0f1e 0%, #1a0a2e 50%, #2a0a1e 100%); }
+footer p { color: rgba(255,255,255,0.35); font-size: 12px; margin: 0; }
+footer strong { color: rgba(255,255,255,0.60); font-weight: 600; }
+
+/* ─── RESPONSIVE ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .wrap { padding: 0 24px; }
+  .hero { min-height: auto; padding: var(--space-4xl) 0 var(--space-3xl); }
+  .hero h1 { font-size: 30px; }
+  .hero-kpi-row { grid-template-columns: 1fr; }
+  .yn-grid, .variants-grid { grid-template-columns: 1fr; }
+  .resources-grid { grid-template-columns: 1fr 1fr; }
+  .use-cases-grid, .resources-grid-asym { grid-template-columns: 1fr; }
+  section { padding: var(--space-4xl) 0; }
+  .kpi-value { font-size: 32px; }
+}
+@media (max-width: 480px) {
+  .resources-grid { grid-template-columns: 1fr; }
+  .hero-kpi-row { gap: 10px; }
+}
+
+/* ─── PRINT ──────────────────────────────────────────────────────── */
+@media print {
+  .hero, .meta-wrap, footer { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  section { page-break-inside: avoid; }
+  h2 { page-break-after: avoid; }
+}
+
+/* ─── REDUCED MOTION ─────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .marquee-track { animation: none !important; }
+}
+
+/* ═══ MOTION — Character Reveal + Subtitle Mask ═══ */
+.char-wrap { overflow: hidden; display: inline-block; vertical-align: bottom; }
+.char { display: inline-block; transform: translateY(110%); animation: char-up 1s cubic-bezier(0.16,1,0.3,1) forwards; }
+@keyframes char-up { to { transform: translateY(0); } }
+.sub-reveal { opacity: 0; transform: translateY(20px); animation: sub-up 0.8s cubic-bezier(0.16,1,0.3,1) forwards; mask-image: linear-gradient(to top, transparent 0%, black 35%); -webkit-mask-image: linear-gradient(to top, transparent 0%, black 35%); }
+@keyframes sub-up { to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .char { animation: none; transform: none; }
+  .sub-reveal { animation: none; opacity: 1; transform: none; mask-image: none; -webkit-mask-image: none; }
+}
+</style>
+</head>
+<!--
+  ╭──────────────────────────────────────────────────────────╮
+  │  Generado con export-one-page-html                       │
+  │  Civitatis · Chapter de Product Designers                │
+  │  Autor de la skill: Jota Coto · Head of UX              │
+  │  github.com/jota-erre-coto/claude-skills                 │
+  ╰──────────────────────────────────────────────────────────╯
+-->
+<body>
+<a href="#main-content" class="skip-link">Saltar al contenido</a>
+<!-- ── HERO ─────────────────────────────────────────────────────── -->
+<header class="hero">
+<div class="wrap hero-inner">
+<div class="hero-badge"><span aria-hidden="true">🧐</span> ux-chapter-rituales · Chapter UX · Interno</div>
+<h1 data-text="La Design Review se prepara casi sola">
+La Design Review <span class="accent">se prepara casi sola</span>
+</h1>
+<p class="hero-lede sub-reveal" style="animation-delay:400ms">
+Una app de Google Chat que lleva cada tema de la Design Review de principio a fin: desde que alguien lo propone hasta que sus acuerdos quedan en el acta. Cada responsable responde de su tema, y jcoto (o Fer, cuando jcoto no está) solo recibe las excepciones.
+</p>
+<div class="hero-kpi-row">
+<div class="kpi-card">
+<p class="kpi-label"><span aria-hidden="true">🙋</span> Participación</p>
+<p class="kpi-value">4 de 5</p>
+<p class="kpi-delta kpi-delta--neutral">PDs proponen un tema</p>
+</div>
+<div class="kpi-card">
+<p class="kpi-label"><span aria-hidden="true">📝</span> Acta a tiempo</p>
+<p class="kpi-value">80 %</p>
+<p class="kpi-delta kpi-delta--neutral">acta validada antes del jueves a las 12:00</p>
+</div>
+<div class="kpi-card">
+<p class="kpi-label"><span aria-hidden="true">⏳</span> Tiempo de espera</p>
+<p class="kpi-value">6</p>
+<p class="kpi-delta kpi-delta--neutral">semanas como máximo en el backlog</p>
+</div>
+</div>
+</div>
+</header>
+<!-- ── MARQUEE ────────────────────────────────────────────────────── -->
+<div class="marquee-strip" aria-hidden="true">
+<div class="marquee">
+<div class="marquee-track">
+<span>Convocatoria</span><span class="marquee-dot">·</span>
+<span>Propuesta</span><span class="marquee-dot">·</span>
+<span>Confirmación</span><span class="marquee-dot">·</span>
+<span>Anuncio</span><span class="marquee-dot">·</span>
+<span>Sesión</span><span class="marquee-dot">·</span>
+<span>Borrador de conclusiones</span><span class="marquee-dot">·</span>
+<span>Acta</span><span class="marquee-dot">·</span>
+<span>Convocatoria</span><span class="marquee-dot">·</span>
+<span>Propuesta</span><span class="marquee-dot">·</span>
+<span>Confirmación</span><span class="marquee-dot">·</span>
+<span>Anuncio</span><span class="marquee-dot">·</span>
+<span>Sesión</span><span class="marquee-dot">·</span>
+<span>Borrador</span><span class="marquee-dot">·</span>
+<span>Acta</span><span class="marquee-dot">·</span>
+</div>
+</div>
+</div>
+<main id="main-content" tabindex="-1">
+<!-- ── 01 · EL PROBLEMA ───────────────────────────────────────────── -->
+<section id="problema">
+<div class="wrap">
+<div class="section-hd reveal">
+<div class="overline">01 · El problema</div>
+<h2 data-char-reveal data-char-per="25">El proceso manual dejó de usarse: la última nota de la Design Review es de abril de 2026</h2>
+<p>La Design Review dependía de una Sheet que nadie mantenía y de que jcoto lo moviera todo a mano.</p>
+</div>
+<div class="trigger-list">
+<div class="trigger-item reveal" style="--i:0">
+<div class="trigger-item__rank r-error" aria-hidden="true">!</div>
+<div class="trigger-item__body">
+<h4 aria-level="3">Los temas vivían en conversaciones sueltas</h4>
+<p>La Sheet de temas dejó de usarse y lo que surgía cada semana se quedaba en DELUX, sin registro. El backlog nunca reflejaba la realidad.</p>
+</div>
+</div>
+<div class="trigger-item reveal" style="--i:1">
+<div class="trigger-item__rank r-error" aria-hidden="true">!</div>
+<div class="trigger-item__body">
+<h4 aria-level="3">La selección favorecía siempre lo urgente</h4>
+<p>La fórmula de la Sheet (urgencia × 10 − esfuerzo) hacía que los temas poco urgentes, como las demos, no salieran nunca.</p>
+</div>
+</div>
+<div class="trigger-item reveal" style="--i:2">
+<div class="trigger-item__rank r-warn" aria-hidden="true">⚠</div>
+<div class="trigger-item__body">
+<h4 aria-level="3">Lo acordado no quedaba registrado</h4>
+<p>No se distinguía entre un tema tratado y un tema resuelto. Además, el Chapter llegaba a la sesión sin saber qué se iba a tratar.</p>
+</div>
+</div>
+<div class="trigger-item reveal" style="--i:3">
+<div class="trigger-item__rank r-warn" aria-hidden="true">⚠</div>
+<div class="trigger-item__body">
+<h4 aria-level="3">Todo dependía de una persona</h4>
+<p>Si jcoto no estaba, la sesión no se preparaba y no quedaba acta.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ── 02 · LA SEMANA ─────────────────────────────────────────────── -->
+<section id="semana" class="alt">
+<div class="wrap">
+<div class="section-hd reveal">
+<div class="overline">02 · La semana de una sesión</div>
+<h2 data-char-reveal data-char-per="25">Seis hitos automáticos, del lunes a las 11:00 al jueves a las 12:00</h2>
+<p>La sesión es el miércoles. La app lanza cada hito a su hora (hora de Madrid). Si esa semana no hay sesión en el calendario, avisa el lunes y no lanza nada más.</p>
+</div>
+<div class="stepper reveal">
+<div class="stepper-step">
+<div class="stepper-num">1</div>
+<div class="stepper-body">
+<h4 aria-level="3">Convocatoria de temas</h4>
+<p>Mensaje en el espacio con el botón «Proponer tema». Los temas que lleguen después de las 13:00 pasan a la selección de la semana siguiente.</p>
+<span class="stepper-tag stepper-tag--info">Lunes · 11:00</span>
+</div>
+</div>
+<div class="stepper-step">
+<div class="stepper-num">2</div>
+<div class="stepper-body">
+<h4 aria-level="3">Propuesta de selección</h4>
+<p>La propuesta le llega a jcoto por mensaje privado: los temas que caben en 60 minutos, ordenados por prioridad. Puede confirmarla, cambiar un tema o dejar solo uno. Sin confirmación no se anuncia nada.</p>
+<span class="stepper-tag stepper-tag--info">Lunes · 13:00</span>
+</div>
+</div>
+<div class="stepper-step">
+<div class="stepper-num">3</div>
+<div class="stepper-body">
+<h4 aria-level="3">Confirmación de cada responsable</h4>
+<p>Cada responsable confirma que lleva su tema antes de las 11:45. Si alguien no lo ha confirmado, la app le propone a jcoto un sustituto con preparación «Lista».</p>
+<span class="stepper-tag stepper-tag--info">Martes · 11:00</span>
+</div>
+</div>
+<div class="stepper-step">
+<div class="stepper-num">4</div>
+<div class="stepper-body">
+<h4 aria-level="3">Anuncio</h4>
+<p>Mensaje en el espacio con los temas confirmados, un hilo por tema para preparar la sesión y el enlace al acta con los acuerdos anteriores.</p>
+<span class="stepper-tag stepper-tag--info">Martes · 12:00</span>
+</div>
+</div>
+<div class="stepper-step">
+<div class="stepper-num">5</div>
+<div class="stepper-body">
+<h4 aria-level="3">Borrador de conclusiones</h4>
+<p>Después de la sesión, la app lee las notas de Gemini y el hilo de cada tema, y envía a cada responsable un borrador de conclusiones con resumen, acuerdos y siguientes pasos.</p>
+<span class="stepper-tag stepper-tag--info">Miércoles · tras la sesión</span>
+</div>
+</div>
+<div class="stepper-step">
+<div class="stepper-num">6</div>
+<div class="stepper-body">
+<h4 aria-level="3">Validación y acta</h4>
+<p>El responsable valida, aclara o indica que no hubo acuerdo. Solo lo validado entra en el Documento de sesiones, el acta única del ritual.</p>
+<span class="stepper-tag stepper-tag--info">Jueves · 12:00</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ── 03 · EL CICLO DE UN TEMA ───────────────────────────────────── -->
+<section id="ciclo">
+<div class="wrap">
+<div class="section-hd reveal">
+<div class="overline">03 · El ciclo de un tema</div>
+<h2 data-char-reveal data-char-per="25">Un tema solo se cierra cuando su responsable valida un acuerdo</h2>
+<p>Cada tema recorre siempre el mismo camino: propuesto → seleccionado → tratado → resuelto o reabierto. Se puede descartar en cualquier momento antes de resolverse.</p>
+</div>
+<div class="variants-grid">
+<div class="variant-card reveal" style="--i:0">
+<span class="variant-card__dot" aria-hidden="true"></span>
+<div class="variant-card__icon" aria-hidden="true">🎯</div>
+<h4 aria-level="3">La preparación es un requisito</h4>
+<p>Cada tema declara su preparación: «Lista», «La tendré para la sesión» o «Falta preparación». Un tema con «Falta preparación» nunca entra en la propuesta.</p>
+<span class="variant-tag">Preparación</span>
+</div>
+<div class="variant-card v-alt reveal" style="--i:1">
+<span class="variant-card__dot" aria-hidden="true"></span>
+<div class="variant-card__icon" aria-hidden="true">📈</div>
+<h4 aria-level="3">Ningún tema se queda atrás</h4>
+<p>La prioridad parte de la urgencia (de 1 a 5), que sube un punto cada 3 semanas en el backlog. A igual urgencia gana el tema más antiguo, y los temas aplazados de la sesión anterior van primero.</p>
+<span class="variant-tag">Prioridad</span>
+</div>
+<div class="variant-card v-info reveal" style="--i:2">
+<span class="variant-card__dot" aria-hidden="true"></span>
+<div class="variant-card__icon" aria-hidden="true">🔁</div>
+<h4 aria-level="3">Sin acuerdo, el tema se reabre</h4>
+<p>Si en la sesión no se llega a un acuerdo, el responsable indica qué falta y el tema pasa a reabierto. Tratado no es lo mismo que resuelto.</p>
+<span class="variant-tag">Reabierto</span>
+</div>
+</div>
+</div>
+</section>
+<!-- ── 04 · QUIÉN HACE QUÉ ────────────────────────────────────────── -->
+<section id="roles" class="alt">
+<div class="wrap">
+<div class="section-hd reveal">
+<div class="overline">04 · Quién hace qué</div>
+<h2 data-char-reveal data-char-per="25">El responsable lleva su tema; jcoto y Fer solo deciden las excepciones</h2>
+<p>La app reconoce a cada persona por su email. Todo se hace desde Google Chat, con dos comandos y los botones de cada mensaje.</p>
+</div>
+<div class="resources-grid">
+<div class="resource-card reveal" style="--i:0">
+<div class="resource-card__icon" aria-hidden="true">🙋</div>
+<h4 aria-level="3">Responsable del tema</h4>
+<p>Suele ser quien propone el tema con <code>/tema</code> (título, tipo de feedback y duración). Consulta y edita sus temas con <code>/mis-temas</code>, confirma que lo lleva, lo presenta y valida sus conclusiones.</p>
+</div>
+<div class="resource-card reveal" style="--i:1">
+<div class="resource-card__icon" aria-hidden="true">🧭</div>
+<h4 aria-level="3">Jota Coto, como organizador</h4>
+<p>Confirma o ajusta la propuesta del lunes, decide los sustitutos y puede asignar un tema a otra persona. Esa persona pasa a ser su responsable, recibe un aviso privado y no puede rechazarlo.</p>
+</div>
+<div class="resource-card reveal" style="--i:2">
+<div class="resource-card__icon" aria-hidden="true">🤝</div>
+<h4 aria-level="3">Fer, como suplente</h4>
+<p>Cuando jcoto tiene en su calendario un evento de fuera de la oficina, la propuesta y las excepciones le llegan a Fer, que asume sus funciones.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- ── 05 · CÓMO ESTÁ CONSTRUIDO ──────────────────────────────────── -->
+<section id="arquitectura">
+<div class="wrap">
+<div class="section-hd reveal">
+<div class="overline">05 · Cómo está construido</div>
+<h2 data-char-reveal data-char-per="25">Un único proyecto de Apps Script cumple tres funciones</h2>
+<p>El código vive en el repositorio <code>ux-chapter-rituales</code>, se sincroniza con <code>clasp</code> y se ejecuta en el proyecto de Google Cloud <code>ux-chapter-rituales</code>. Toda la configuración de cada ritual está en un solo archivo.</p>
+</div>
+<div class="resources-grid">
+<div class="resource-card reveal" style="--i:0">
+<div class="resource-card__icon" aria-hidden="true">💬</div>
+<h4 aria-level="3">App de Chat</h4>
+<p>Funciona como complemento de Google Workspace, con la cuenta de quien la usa. Abre los diálogos, lee el registro de temas y responde a los comandos y botones.</p>
+</div>
+<div class="resource-card reveal" style="--i:1">
+<div class="resource-card__icon" aria-hidden="true">🗂️</div>
+<h4 aria-level="3">Servicio del registro</h4>
+<p>Es una aplicación web que se ejecuta con la cuenta de jcoto. Todas las altas y cambios pasan por ella, así que el Chapter solo necesita acceso de lectura al registro de temas, que está protegido.</p>
+</div>
+<div class="resource-card reveal" style="--i:2">
+<div class="resource-card__icon" aria-hidden="true">⏱️</div>
+<h4 aria-level="3">Disparador de hitos</h4>
+<p>Se ejecuta cada 5 minutos, también con la cuenta de jcoto, y lanza el hito que toca. Lee las sesiones del calendario por el ID de la serie, nunca por el título.</p>
+</div>
+</div>
+<div class="callout reveal">
+<div class="callout__icon" aria-hidden="true">🔑</div>
+<div class="callout__body">
+<h4 aria-level="3">Mensajes, borrador y pruebas</h4>
+<p>Los mensajes que la app envía por su cuenta salen de una cuenta de servicio, sin claves descargadas. El borrador de conclusiones lo genera Gemini en Vertex AI, dentro del entorno de Google, donde ya están las notas de Meet. Antes de llegar al Chapter, todo se prueba en un espacio, un registro de temas, un acta y un evento de pruebas.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- ── 06 · ESTADO ────────────────────────────────────────────────── -->
+<section id="estado" class="alt">
+<div class="wrap">
+<div class="section-hd reveal">
+<div class="overline">06 · Estado</div>
+<h2 data-char-reveal data-char-per="25">La mitad del ciclo funciona ya en pruebas: del alta de temas a la propuesta del lunes</h2>
+<p>El trabajo está dividido en 15 issues en GitHub. Esta es la situación a 18 de noviembre de 2026.</p>
+</div>
+<div class="yn-grid">
+<div class="yn-card yn-card--yes reveal" style="--i:0">
+<div class="yn-card__head">
+<div class="yn-icon" aria-hidden="true">✓</div>
+<h4 aria-level="3">Funciona en pruebas</h4>
+</div>
+<div class="yn-card__body">
+<ul class="yn-list">
+<li>Entorno de pruebas y despliegue</li>
+<li>Proponer, consultar, editar y descartar temas</li>
+<li>Asignar temas, con aviso privado</li>
+<li>Registro protegido: solo escribe la app</li>
+<li>Convocatoria del lunes y disparador automático</li>
+<li>Propuesta de selección con sus botones</li>
+</ul>
+</div>
+</div>
+<div class="yn-card yn-card--no reveal" style="--i:1">
+<div class="yn-card__head">
+<div class="yn-icon" aria-hidden="true">…</div>
+<h4 aria-level="3">Pendiente</h4>
+</div>
+<div class="yn-card__body">
+<ul class="yn-list">
+<li>Ausencia de jcoto y traspaso a Fer</li>
+<li>Confirmación de los responsables y sustitutos</li>
+<li>Anuncio con un hilo por tema</li>
+<li>Borrador de conclusiones con Vertex AI</li>
+<li>Validación y acta</li>
+<li>Revisión de textos con Ana y paso a DELUX</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ── META QUOTE ─────────────────────────────────────────────────── -->
+<div class="meta-wrap">
+<div class="wrap">
+<div class="meta-card reveal">
+<div class="meta-card__head">
+<div class="meta-dot"></div>
+<span>Cuándo pasa a DELUX</span>
+</div>
+<div class="meta-card__body">
+<p class="meta-quote">
+La app solo pasa a DELUX cuando un ciclo completo funciona en pruebas, <strong>de la convocatoria del lunes al acta del jueves</strong>, con la ausencia de jcoto incluida y todos los textos revisados por Ana.
+</p>
+<div class="meta-attr">
+<div class="meta-avatar" aria-hidden="true">👤</div>
+<div class="meta-info">
+<div class="meta-info__role">Owner del proyecto · Fer como co-owner</div>
+<div class="meta-info__name">Jota Coto · Head of UX</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- ── FOOTER ─────────────────────────────────────────────────────── -->
+<footer class="footer--gradient">
+<p><strong>ux-chapter-rituales</strong> &nbsp;·&nbsp; Civitatis · Chapter UX · Noviembre 2026</p>
+</footer>
+<script>
+  requestAnimationFrame(() => document.documentElement.classList.add('js-ready'));
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const el = e.target;
+        const delay = (parseFloat(el.style.getPropertyValue('--i') || 0)) * 60;
+        setTimeout(() => el.classList.add('is-visible'), delay);
+        io.unobserve(el);
+      }
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  function switchTab(groupId, activeTabId) {
+    const group = document.getElementById(groupId);
+    group.querySelectorAll('.tabs-panel').forEach(p => p.classList.remove('active'));
+    group.querySelectorAll('.tabs-trigger').forEach(t => t.classList.remove('active'));
+    document.getElementById(activeTabId).classList.add('active');
+    event.currentTarget.classList.add('active');
+  }
+</script>
+<script>
+(function() {
+  function splitChars(el) {
+    var delay = parseInt(el.dataset.charDelay || 0);
+    var per = parseInt(el.dataset.charPer || 40);
+    var text = el.textContent.trim();
+    el.setAttribute('aria-label', text);
+    el.textContent = '';
+    el.style.overflow = 'hidden';
+    el.style.display = 'flex';
+    el.style.flexWrap = 'wrap';
+    Array.from(text).forEach(function(char, i) {
+      var wrap = document.createElement('span');
+      wrap.className = 'char-wrap';
+      wrap.setAttribute('aria-hidden', 'true');
+      var inner = document.createElement('span');
+      inner.className = 'char';
+      inner.style.animationDelay = (delay + i * per) + 'ms';
+      inner.textContent = char === ' ' ? ' ' : char;
+      wrap.appendChild(inner);
+      el.appendChild(wrap);
+    });
+  }
+  document.querySelectorAll('[data-char-reveal]').forEach(splitChars);
+})();
+</script>
+</body>
+</html>

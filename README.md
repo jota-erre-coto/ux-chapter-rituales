@@ -1,5 +1,7 @@
 # ux-chapter-rituales
 
+> **Explicación del proyecto en una página:** [docs/proyecto.html](docs/proyecto.html). GitHub muestra el código del HTML: descárgalo y ábrelo en el navegador.
+
 App de Google Chat que gestiona el ciclo de temas de los rituales del Chapter de UX de Civitatis: convocatoria, selección, anuncio en DELUX y acta de acuerdos. Empieza por la Design Review; el Design Chapter vendrá después como segunda configuración.
 
 - Owner: jcoto. Co-owner y suplente: Fer.
