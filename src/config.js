@@ -16,7 +16,7 @@ const RITUALES = {
     zonaHoraria: 'Europe/Madrid',
     duracionSesionMin: 60,
     // El disparador programado solo lanza hitos de los rituales con esto activo.
-    disparadorActivo: false,
+    disparadorActivo: true,
     // Permite lanzar hitos a mano con /hito. Solo en el ritual de pruebas.
     disparoManual: true,
     // Hitos de la semana de sesión: día (1 = lunes) y hora local.
