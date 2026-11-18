@@ -84,14 +84,17 @@ function enviarTema(event) {
 }
 
 // Miembros del espacio del ritual a los que esta persona puede asignar temas, o null
-// si no puede asignar. Si la lectura de miembros falla, se registra el error y el
-// diálogo se abre sin el campo Responsable: proponer temas no debe romperse por esto.
+// si no puede asignar. La ausencia del organizador solo se consulta para el suplente,
+// para no retrasar /tema al resto. Si algo falla, se registra el error y el diálogo se
+// abre sin el campo Responsable: proponer temas no debe romperse por esto.
 function asignablesPara_(ritual, actor) {
-  if (!puedeAsignar(actor, ritual, organizadorAusente_(ritual))) return null;
   try {
+    const esSuplente = actor.email === ritual.suplente;
+    if (actor.email !== ritual.organizador && !esSuplente) return null;
+    if (!puedeAsignar(actor, ritual, esSuplente && organizadorAusente_(ritual))) return null;
     return miembrosDelEspacio_(ritual.espacio);
   } catch (error) {
-    console.error(`No se han podido leer los miembros de ${ritual.espacio}: ${error.stack}`);
+    console.error(`No se ha podido preparar la asignación en ${ritual.espacio}: ${error.stack}`);
     return null;
   }
 }

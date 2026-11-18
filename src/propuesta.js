@@ -25,29 +25,34 @@ function hoyDe_(ritual) {
   return Utilities.formatDate(new Date(), ritual.zonaHoraria, 'yyyy-MM-dd');
 }
 
-// Hito del lunes a las 13:00. Con el organizador ausente irá al suplente (#9).
+// Hito del lunes a las 13:00. Va al organizador, o al suplente si está ausente.
 function lanzarPropuesta_(ritual, { sesion, lunes }) {
   const claveRitual = claveDeRitual_(ritual);
   const hoy = hoyDe_(ritual);
   const temas = leerTemas_(ritual);
   const { seleccion } = proponerSeleccion(temas, hoy, ritual.duracionSesionMin);
-  const propuesta = { claveRitual, lunes, sesion, ids: seleccion.map((t) => t.id), estado: 'pendiente' };
+  const destinatario = destinatarioGestion(ritual, organizadorAusente_(ritual));
+  const propuesta = {
+    claveRitual, lunes, sesion, ids: seleccion.map((t) => t.id), estado: 'pendiente',
+    enSustitucion: destinatario !== ritual.organizador,
+  };
   const enviado = enviarPrivadoPorEmail_(
     ritual,
-    ritual.organizador,
+    destinatario,
     mensajePropuesta(ritual, propuesta, seleccion, sustitutosPara(temas, seleccion, hoy), hoy)
   );
-  if (!enviado) throw new Error(`No se ha podido enviar la propuesta a ${ritual.organizador}.`);
+  if (!enviado) throw new Error(`No se ha podido enviar la propuesta a ${destinatario}.`);
   propuesta.mensaje = enviado.name;
   guardarPropuesta_(propuesta);
 }
 
 // Hito del martes a las 11:00. La confirmación a los responsables llega en el #10;
-// por ahora solo se avisa al organizador si no confirmó.
+// por ahora solo se avisa si nadie confirmó, al organizador o a su suplente.
 function revisarConfirmacionPropuesta_(ritual, { sesion, lunes }) {
   const propuesta = leerPropuesta_(claveDeRitual_(ritual), lunes);
   if (propuesta && propuesta.estado === 'confirmada') return;
-  enviarPrivadoPorEmail_(ritual, ritual.organizador, mensajeSinConfirmar(ritual, sesion));
+  const destinatario = destinatarioGestion(ritual, organizadorAusente_(ritual));
+  enviarPrivadoPorEmail_(ritual, destinatario, mensajeSinConfirmar(ritual, sesion));
 }
 
 // Vuelve a pintar la tarjeta de la propuesta con su estado actual.

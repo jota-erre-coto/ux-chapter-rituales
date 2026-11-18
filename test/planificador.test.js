@@ -70,3 +70,24 @@ test('cambio de hora de marzo: la convocatoria sale a las 11:00 de Madrid, que p
   assert.deepEqual(nombres(hitosPendientes(ritual, madrid('2027-03-29T08:59:00Z'), sesiones, [])), []);
   assert.deepEqual(nombres(hitosPendientes(ritual, madrid('2027-03-29T09:00:00Z'), sesiones, [])), ['convocatoria']);
 });
+
+const ritualGestion = { organizador: 'jcoto@civitatis.com', suplente: 'fgimenez@civitatis.com' };
+
+test('la propuesta y las excepciones van al organizador, o al suplente si está ausente', () => {
+  const destinatarioGestion = simbolo('destinatarioGestion');
+  assert.equal(destinatarioGestion(ritualGestion, false), 'jcoto@civitatis.com');
+  assert.equal(destinatarioGestion(ritualGestion, true), 'fgimenez@civitatis.com');
+});
+
+test('cuenta como ausencia cualquier evento de fuera de la oficina que toque el día del hito', () => {
+  const ausenteEseDia = simbolo('ausenteEseDia');
+  const lunes = '2026-11-23';
+  assert.equal(ausenteEseDia([], lunes), false);
+  // Vacaciones de varios días que incluyen el lunes.
+  assert.equal(ausenteEseDia([{ desde: '2026-11-20T00:00', hasta: '2026-11-28T00:00' }], lunes), true);
+  // Solo la mañana del lunes: también cuenta, porque es el día del hito.
+  assert.equal(ausenteEseDia([{ desde: '2026-11-23T09:00', hasta: '2026-11-23T12:00' }], lunes), true);
+  // Termina justo al empezar el lunes, o empieza justo al acabar: no cuenta.
+  assert.equal(ausenteEseDia([{ desde: '2026-11-20T00:00', hasta: '2026-11-23T00:00' }], lunes), false);
+  assert.equal(ausenteEseDia([{ desde: '2026-11-24T00:00', hasta: '2026-11-25T00:00' }], lunes), false);
+});

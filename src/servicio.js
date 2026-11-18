@@ -70,6 +70,12 @@ const OPERACIONES_SERVICIO_ = {
     return { ok: true, temas: resultados.map((r) => r.tema) };
   },
 
+  // Si el organizador está fuera de la oficina hoy. Solo lo puede leer su cuenta, que
+  // es la que ejecuta el servicio.
+  ausencia(ritual) {
+    return { ok: true, ausente: organizadorAusente_(ritual) };
+  },
+
   descartar(ritual, actor, { id }) {
     const tema = buscarTema_(ritual, id);
     if (!tema) return fallo_('id', `No encuentro el tema ${id} en el registro.`);

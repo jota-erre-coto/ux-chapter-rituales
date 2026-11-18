@@ -141,3 +141,12 @@ test('cada tema de /mis-temas muestra su fecha de alta', () => {
   const tarjeta = conPrioridad('dialogoMisTemas')([tema], [], '2026-11-18', () => ({}));
   assert.equal(tarjeta.sections[0].widgets[0].decoratedText.topLabel, 'DR-001 · 3 nov 2026 · propuesto');
 });
+
+test('si la propuesta llega al suplente, dice por qué', () => {
+  const mensaje = conPrioridad('mensajePropuesta')(
+    Object.assign({ organizador: 'jcoto@civitatis.com' }, ritualPropuesta),
+    { claveRitual: 'pruebas', lunes: '2026-11-23', sesion: '2026-11-25', estado: 'pendiente', enSustitucion: true },
+    [temaPropuesto({})], [], '2026-11-23'
+  );
+  assert.match(JSON.stringify(mensaje.cardsV2), /porque jcoto@civitatis.com está fuera de la oficina/);
+});
