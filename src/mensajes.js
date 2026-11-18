@@ -273,6 +273,7 @@ function mensajeConvocatoria(ritual, sesion) {
                         text: 'Proponer tema',
                         onClick: { action: { function: 'abrirAltaTema', interaction: 'OPEN_DIALOG' } },
                       },
+                      botonActa_(ritual),
                     ],
                   },
                 },
@@ -283,6 +284,15 @@ function mensajeConvocatoria(ritual, sesion) {
       },
     ],
   };
+}
+
+// Enlace al Documento de sesiones, para llegar a lo acordado en sesiones anteriores.
+function urlActa(ritual) {
+  return `https://docs.google.com/document/d/${ritual.actaId}/edit`;
+}
+
+function botonActa_(ritual) {
+  return { text: 'Ver acuerdos anteriores', onClick: { openLink: { url: urlActa(ritual) } } };
 }
 
 // Aviso del lunes cuando esa semana no hay sesión. lunes: 'AAAA-MM-DD'.

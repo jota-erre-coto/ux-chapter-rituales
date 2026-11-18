@@ -73,7 +73,7 @@ test('el campo Responsable solo aparece para quien puede asignar, con su nombre 
   assert.equal(elegido.text, 'Jota (tú)');
 });
 
-const ritualPruebas = { nombre: 'Design Review', hitos: { propuesta: { dia: 1, hora: '13:00' } } };
+const ritualPruebas = { nombre: 'Design Review', actaId: 'ACTA', hitos: { propuesta: { dia: 1, hora: '13:00' } } };
 
 test('la convocatoria nombra la sesión, el cierre de las 13:00 y abre el diálogo de alta', () => {
   const mensaje = conPrioridad('mensajeConvocatoria')(ritualPruebas, '2026-11-25');
@@ -83,6 +83,8 @@ test('la convocatoria nombra la sesión, el cierre de las 13:00 y abre el diálo
   assert.equal(boton.text, 'Proponer tema');
   assert.equal(boton.onClick.action.function, 'abrirAltaTema');
   assert.equal(boton.onClick.action.interaction, 'OPEN_DIALOG');
+  const acta = mensaje.cardsV2[0].card.sections[0].widgets[0].buttonList.buttons[1];
+  assert.equal(acta.onClick.openLink.url, 'https://docs.google.com/document/d/ACTA/edit');
 });
 
 test('una semana sin sesión se anuncia sin botón de proponer', () => {
