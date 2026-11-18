@@ -3,7 +3,7 @@
 // la sesión de quien la usa; las escrituras pasan por el servicio del registro.
 
 // IDs de comando tal como están dados de alta en la consola de la Chat API.
-const COMANDOS = { tema: 1, misTemas: 2 };
+const COMANDOS = { tema: 1, misTemas: 2, hito: 3 };
 
 function onAddedToSpace(event) {
   return mensaje_('App de rituales conectada a este espacio. Usa /tema para proponer un tema.');
@@ -17,11 +17,14 @@ function onRemovedFromSpace(event) {}
 
 function onAppCommand(event) {
   const id = Number(event.chat.appCommandPayload.appCommandMetadata.appCommandId);
-  if (id === COMANDOS.tema) {
-    const actor = actorDe_(event);
+  if (id === COMANDOS.tema) return abrirAltaTema(event);
+  if (id === COMANDOS.hito) {
     const ritual = ritualDelEspacio_(event.chat.appCommandPayload.space);
-    const asignables = ritual && asignablesPara_(ritual, actor);
-    return abrirDialogo_(dialogoAltaTema(null, null, null, asignables, actor.email));
+    const actor = actorDe_(event);
+    if (!ritual || !ritual.disparoManual || ![ritual.organizador, ritual.suplente].includes(actor.email)) {
+      return abrirDialogo_(dialogoAviso('Lanzar hitos a mano solo está disponible para el organizador y el suplente, en el ritual de pruebas.'));
+    }
+    return abrirDialogo_(dialogoLanzarHito(hitosManuales_()));
   }
   if (id === COMANDOS.misTemas) {
     const ritual = ritualDelEspacio_(event.chat.appCommandPayload.space);
@@ -29,6 +32,32 @@ function onAppCommand(event) {
     return abrirDialogo_(construirMisTemas_(ritual, actorDe_(event)));
   }
   return abrirDialogo_(dialogoAviso('No conozco ese comando.'));
+}
+
+// /tema y el botón «Proponer tema» de la convocatoria: abre el diálogo de alta.
+function abrirAltaTema(event) {
+  const actor = actorDe_(event);
+  const carga = event.chat.appCommandPayload || event.chat.buttonClickedPayload || {};
+  const ritual = ritualDelEspacio_(carga.space);
+  const asignables = ritual && asignablesPara_(ritual, actor);
+  return abrirDialogo_(dialogoAltaTema(null, null, null, asignables, actor.email));
+}
+
+// Botón de un hito en el diálogo de /hito.
+function lanzarHitoManual(event) {
+  const ritual = ritualDelEspacio_((event.chat.buttonClickedPayload || {}).space);
+  const actor = actorDe_(event);
+  if (!ritual || !ritual.disparoManual || ![ritual.organizador, ritual.suplente].includes(actor.email)) {
+    return cerrarConMensaje_('No puedes lanzar hitos en este espacio.', event);
+  }
+  const hito = (event.commonEventObject.parameters || {}).hito;
+  try {
+    const lanzado = lanzarHito_(ritual, hito);
+    return cerrarConMensaje_(`Hito ${lanzado} lanzado.`, event);
+  } catch (error) {
+    console.error(`Error al lanzar el hito ${hito}: ${error.stack}`);
+    return cerrarConMensaje_(`No se ha podido lanzar el hito ${hito}: ${error.message}`, event);
+  }
 }
 
 // Botón «Proponer tema» del diálogo de alta.

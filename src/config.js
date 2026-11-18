@@ -15,6 +15,10 @@ const RITUALES = {
     suplente: 'fgimenez@civitatis.com',
     zonaHoraria: 'Europe/Madrid',
     duracionSesionMin: 60,
+    // El disparador programado solo lanza hitos de los rituales con esto activo.
+    disparadorActivo: false,
+    // Permite lanzar hitos a mano con /hito. Solo en el ritual de pruebas.
+    disparoManual: true,
     // Hitos de la semana de sesión: día (1 = lunes) y hora local.
     hitos: {
       convocatoria: { dia: 1, hora: '11:00' },

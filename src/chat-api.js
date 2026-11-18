@@ -71,6 +71,11 @@ function enviarPrivado_(usuario, mensaje) {
   }
 }
 
+// Publica un mensaje de la app en un espacio (texto y, si hace falta, tarjetas).
+function publicarEnEspacio_(espacio, mensaje) {
+  return pedir_(`${CHAT_API}/${espacio}/messages`, tokenApp_(), mensaje);
+}
+
 // Token de la cuenta de servicio con el permiso de app de Chat, cacheado por usuario.
 function tokenApp_() {
   const cache = CacheService.getUserCache();

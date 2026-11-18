@@ -239,3 +239,83 @@ function desplegable_(nombre, etiqueta, opciones, seleccionada) {
     },
   };
 }
+
+const DIAS_SEMANA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
+  'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+// 'AAAA-MM-DD' → 'miércoles 25 de noviembre'.
+function fechaLarga(fecha) {
+  const d = new Date(`${fecha}T00:00:00Z`);
+  return `${DIAS_SEMANA[d.getUTCDay()]} ${d.getUTCDate()} de ${MESES[d.getUTCMonth()]}`;
+}
+
+// Convocatoria del lunes: mensaje con botón que abre el diálogo de alta.
+// ritual: { nombre, hitos }; sesion: fecha de la sesión de la semana.
+function mensajeConvocatoria(ritual, sesion) {
+  const cierre = ritual.hitos.propuesta.hora;
+  return {
+    text:
+      `Convocatoria de temas para la ${ritual.nombre} del ${fechaLarga(sesion)}.\n` +
+      `Si tienes algo que llevar, propónlo antes de las ${cierre} de hoy. ` +
+      'Lo que llegue después entrará en la selección de la semana siguiente.',
+    cardsV2: [
+      {
+        cardId: 'convocatoria',
+        card: {
+          sections: [
+            {
+              widgets: [
+                {
+                  buttonList: {
+                    buttons: [
+                      {
+                        text: 'Proponer tema',
+                        onClick: { action: { function: 'abrirAltaTema', interaction: 'OPEN_DIALOG' } },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    ],
+  };
+}
+
+// Aviso del lunes cuando esa semana no hay sesión. lunes: 'AAAA-MM-DD'.
+function mensajeSinSesion(ritual, lunes) {
+  return {
+    text:
+      `Esta semana no hay ${ritual.nombre}, así que no hay convocatoria de temas. ` +
+      'Los temas del backlog siguen ahí para la próxima sesión, y puedes proponer nuevos con /tema.',
+  };
+}
+
+// Diálogo de /hito: un botón por hito que se puede lanzar a mano.
+function dialogoLanzarHito(hitos) {
+  return {
+    header: { title: 'Lanzar un hito a mano' },
+    sections: [
+      {
+        widgets: [
+          {
+            textParagraph: {
+              text: 'Solo en el ritual de pruebas. Se lanza como si fuera su hora, para la semana actual.',
+            },
+          },
+          {
+            buttonList: {
+              buttons: hitos.map((hito) => ({
+                text: hito,
+                onClick: { action: { function: 'lanzarHitoManual', parameters: [{ key: 'hito', value: hito }] } },
+              })),
+            },
+          },
+        ],
+      },
+    ],
+  };
+}
