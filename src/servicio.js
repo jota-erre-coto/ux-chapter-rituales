@@ -42,7 +42,7 @@ const OPERACIONES_SERVICIO_ = {
     const destinatario = miembros.find((p) => p.email === tema.responsable);
     const avisado =
       Boolean(destinatario && destinatario.id) &&
-      enviarPrivado_(destinatario.id, { text: textoAvisoAsignacion(tema, actor.nombre || actor.email) });
+      Boolean(enviarPrivado_(destinatario.id, { text: textoAvisoAsignacion(tema, actor.nombre || actor.email) }));
     return { ok: true, tema, avisado };
   },
 
@@ -52,6 +52,22 @@ const OPERACIONES_SERVICIO_ = {
     const resultado = editarTema(tema, valores, actor);
     if (resultado.ok) actualizarTema_(ritual, resultado.tema);
     return resultado;
+  },
+
+  // Pasa a seleccionado todos los temas de una propuesta confirmada. Comprueba todos
+  // antes de escribir ninguno, para no dejar la selección a medias.
+  seleccionar(ritual, actor, { ids }) {
+    const temas = leerTemas_(ritual);
+    const resultados = ids.map((id) => {
+      const tema = temas.find((t) => t.id === id);
+      return tema ? seleccionarTema(tema, actor, ritual) : fallo_('id', `No encuentro el tema ${id} en el registro.`);
+    });
+    const fallidos = resultados.filter((r) => !r.ok);
+    if (fallidos.length) {
+      return { ok: false, errores: Object.assign({}, ...fallidos.map((r) => r.errores)) };
+    }
+    resultados.forEach((r) => actualizarTema_(ritual, r.tema));
+    return { ok: true, temas: resultados.map((r) => r.tema) };
   },
 
   descartar(ritual, actor, { id }) {

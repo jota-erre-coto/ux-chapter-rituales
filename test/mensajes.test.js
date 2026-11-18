@@ -92,3 +92,45 @@ test('una semana sin sesión se anuncia sin botón de proponer', () => {
   assert.match(mensaje.text, /no hay Design Review/);
   assert.equal(mensaje.cardsV2, undefined);
 });
+
+const ritualPropuesta = {
+  nombre: 'Design Review', duracionSesionMin: 60,
+  hitos: { confirmacion: { dia: 2, hora: '11:00' } },
+};
+const temaPropuesto = (cambios) => Object.assign(
+  { id: 'DR-001', titulo: 'Tag', tipo: 'Informar', duracion: 30, urgencia: 3, preparacion: 'Lista',
+    fechaAlta: '2026-11-16', responsable: 'atoca@civitatis.com', preferencia: false },
+  cambios
+);
+const botonesDe = (mensaje) => {
+  const secciones = mensaje.cardsV2[0].card.sections;
+  const lista = secciones[secciones.length - 1].widgets.find((w) => w.buttonList);
+  return lista ? [...lista.buttonList.buttons].map((b) => b.text) : [];
+};
+
+test('la propuesta pendiente muestra los temas, los minutos, el plazo y los tres botones', () => {
+  const mensaje = conPrioridad('mensajePropuesta')(
+    ritualPropuesta,
+    { claveRitual: 'pruebas', lunes: '2026-11-23', sesion: '2026-11-25', estado: 'pendiente' },
+    [temaPropuesto({}), temaPropuesto({ id: 'DR-002', duracion: 15, preferencia: true })],
+    [temaPropuesto({ id: 'DR-003' })],
+    '2026-11-23'
+  );
+  assert.match(mensaje.text, /miércoles 25 de noviembre/);
+  const pie = JSON.stringify(mensaje.cardsV2);
+  assert.match(pie, /45 de 60 minutos/);
+  assert.match(pie, /Sustitutos si alguien no confirma: DR-003/);
+  assert.match(pie, /antes del martes a las 11:00/);
+  assert.match(pie, /aplazado de la sesión anterior/);
+  assert.deepEqual(botonesDe(mensaje), ['Confirmar', 'Cambiar tema', 'Solo uno']);
+});
+
+test('la propuesta confirmada no tiene botones y una vacía solo deja añadir', () => {
+  const mensajePropuesta = conPrioridad('mensajePropuesta');
+  const base = { claveRitual: 'pruebas', lunes: '2026-11-23', sesion: '2026-11-25' };
+  const confirmada = mensajePropuesta(ritualPropuesta, Object.assign({ estado: 'confirmada', confirmadaPor: 'Jota' }, base), [temaPropuesto({})], [], '2026-11-23');
+  assert.match(confirmada.text, /confirmada por Jota/);
+  assert.deepEqual(botonesDe(confirmada), []);
+  const vacia = mensajePropuesta(ritualPropuesta, Object.assign({ estado: 'pendiente' }, base), [], [], '2026-11-23');
+  assert.deepEqual(botonesDe(vacia), ['Añadir tema']);
+});

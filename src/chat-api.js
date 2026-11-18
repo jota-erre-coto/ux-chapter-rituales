@@ -57,18 +57,32 @@ function personasPorId_(ids) {
 }
 
 // Envía un mensaje privado de la app a un usuario de Chat (users/123…). La app no
-// puede buscar a nadie por email. Devuelve false si no se ha podido entregar, por
-// ejemplo porque esa persona nunca ha abierto un chat directo con la app.
+// puede buscar a nadie por email. Devuelve el mensaje creado, o null si no se ha
+// podido entregar, por ejemplo porque esa persona nunca ha abierto un chat con la app.
 function enviarPrivado_(usuario, mensaje) {
   try {
     const token = tokenApp_();
     const espacio = pedir_(`${CHAT_API}/spaces:findDirectMessage?name=${usuario}`, token).name;
-    pedir_(`${CHAT_API}/${espacio}/messages`, token, mensaje);
-    return true;
+    return pedir_(`${CHAT_API}/${espacio}/messages`, token, mensaje);
   } catch (error) {
     console.error(`No se ha podido enviar un mensaje privado a ${usuario}: ${error.message}`);
-    return false;
+    return null;
   }
+}
+
+// Envía un mensaje privado a una persona del espacio del ritual, por su email.
+function enviarPrivadoPorEmail_(ritual, email, mensaje) {
+  const persona = miembrosDelEspacio_(ritual.espacio).find((p) => p.email === email);
+  if (!persona) {
+    console.error(`${email} no es miembro de ${ritual.espacio}; no se le puede escribir.`);
+    return null;
+  }
+  return enviarPrivado_(persona.id, mensaje);
+}
+
+// Sustituye el texto y las tarjetas de un mensaje que envió la app.
+function actualizarMensaje_(nombre, mensaje) {
+  return pedir_(`${CHAT_API}/${nombre}?updateMask=text,cardsV2`, tokenApp_(), mensaje, 'patch');
 }
 
 // Publica un mensaje de la app en un espacio (texto y, si hace falta, tarjetas).
@@ -92,10 +106,11 @@ function tokenApp_() {
   return respuesta.accessToken;
 }
 
-// GET si no hay cuerpo, POST con JSON si lo hay. Lanza un error con el código HTTP.
-function pedir_(url, token, cuerpo) {
+// GET si no hay cuerpo, POST con JSON si lo hay (u otro método si se indica).
+// Lanza un error con el código HTTP.
+function pedir_(url, token, cuerpo, metodo) {
   const opciones = {
-    method: cuerpo ? 'post' : 'get',
+    method: metodo || (cuerpo ? 'post' : 'get'),
     headers: { Authorization: `Bearer ${token}` },
     muteHttpExceptions: true,
   };

@@ -101,6 +101,23 @@ function descartarTema(tema, actor, ritual) {
   return { ok: true, tema: Object.assign({}, tema, { estado: ESTADOS.descartado }) };
 }
 
+// Selecciona un tema para la sesión: lo hacen el organizador o el suplente, y solo
+// con temas del backlog que no tengan Falta preparación.
+function seleccionarTema(tema, actor, ritual) {
+  const email = emailDe_(actor);
+  const gestores = [ritual.organizador, ritual.suplente].map((e) => String(e || '').toLowerCase());
+  if (!email || !gestores.includes(email)) {
+    return { ok: false, errores: { actor: 'Solo el organizador o el suplente seleccionan temas.' } };
+  }
+  if (!estadosEditables_().includes(tema.estado)) {
+    return { ok: false, errores: { estado: `El tema ${tema.id} está ${tema.estado} y no se puede seleccionar.` } };
+  }
+  if (tema.preparacion === PREPARACIONES.falta) {
+    return { ok: false, errores: { preparacion: `Al tema ${tema.id} le falta preparación.` } };
+  }
+  return { ok: true, tema: Object.assign({}, tema, { estado: ESTADOS.seleccionado }) };
+}
+
 // Asigna temas el organizador, y el suplente solo mientras el organizador está ausente.
 function puedeAsignar(actor, ritual, organizadorAusente) {
   const email = emailDe_(actor);

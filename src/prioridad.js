@@ -52,10 +52,16 @@ function proponerSeleccion(temas, hoy, duracionSesionMin) {
       minutos += t.duracion;
     }
   });
-  const sustitutos = ordenados.filter(
-    (t) => !seleccion.includes(t) && t.preparacion === PREPARACIONES.lista
+  return { seleccion, sustitutos: sustitutosPara(temas, seleccion, hoy), minutos };
+}
+
+// Sustitutos de una selección: candidatos que han quedado fuera con preparación Lista,
+// por prioridad.
+function sustitutosPara(temas, seleccion, hoy) {
+  const dentro = seleccion.map((t) => t.id);
+  return ordenarPorPrioridad(candidatos(temas), hoy).filter(
+    (t) => !dentro.includes(t.id) && t.preparacion === PREPARACIONES.lista
   );
-  return { seleccion, sustitutos, minutos };
 }
 
 // «Solo uno»: deja en la selección únicamente el tema indicado.
@@ -67,14 +73,15 @@ function quedarseConUno(seleccion, id) {
 
 // «Cambiar tema»: sustituye un tema de la selección por otro candidato del backlog,
 // también uno que llegó después del cierre de la convocatoria, siempre que quepa.
+// Sin saleId, añade el tema a la selección si hay hueco.
 function cambiarTema(seleccion, saleId, entra, duracionSesionMin) {
-  if (!seleccion.some((t) => t.id === saleId))
+  if (saleId && !seleccion.some((t) => t.id === saleId))
     return { ok: false, errores: { id: `El tema ${saleId} no está en la propuesta.` } };
   if (!candidatos([entra]).length)
     return { ok: false, errores: { id: `El tema ${entra.id} no se puede seleccionar: ${motivoNoCandidato_(entra)}.` } };
   if (seleccion.some((t) => t.id === entra.id))
     return { ok: false, errores: { id: `El tema ${entra.id} ya está en la propuesta.` } };
-  const nueva = seleccion.map((t) => (t.id === saleId ? entra : t));
+  const nueva = saleId ? seleccion.map((t) => (t.id === saleId ? entra : t)) : seleccion.concat([entra]);
   const minutos = nueva.reduce((suma, t) => suma + t.duracion, 0);
   if (minutos > duracionSesionMin)
     return { ok: false, errores: { duracion: `Con ese cambio la sesión pasaría a ${minutos} minutos.` } };

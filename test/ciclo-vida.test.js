@@ -170,3 +170,13 @@ test('el responsable no puede rechazar un tema asignado; el organizador y el sup
   assert.equal(simbolo('descartarTema')(asignado, jcoto, ritual).ok, true);
   assert.equal(simbolo('descartarTema')(asignado, { email: 'fgimenez@civitatis.com' }, ritual).ok, true);
 });
+
+test('seleccionan el organizador o el suplente, y solo temas del backlog preparados', () => {
+  const seleccionarTema = simbolo('seleccionarTema');
+  const listo = temaDe({ preparacion: 'Lista' });
+  assert.equal(seleccionarTema(listo, jcoto, ritual).tema.estado, 'seleccionado');
+  assert.equal(seleccionarTema(listo, { email: 'fgimenez@civitatis.com' }, ritual).ok, true);
+  assert.ok(seleccionarTema(listo, actor, ritual).errores.actor);
+  assert.ok(seleccionarTema(temaDe({ preparacion: 'Falta preparación' }), jcoto, ritual).errores.preparacion);
+  assert.ok(seleccionarTema(temaDe({ preparacion: 'Lista', estado: 'resuelto' }), jcoto, ritual).errores.estado);
+});

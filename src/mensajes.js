@@ -330,3 +330,155 @@ function dialogoLanzarHito(hitos) {
     ],
   };
 }
+
+// Día de la semana de un hito ({ dia: 1 = lunes }) para los textos.
+function diaDeHito_(cuando) {
+  return DIAS_SEMANA[cuando.dia % 7];
+}
+
+// Tarjeta privada de la propuesta de selección.
+// propuesta: { claveRitual, lunes, sesion, estado: 'pendiente' | 'confirmada', confirmadaPor }
+// seleccion, sustitutos: temas completos; hoy: 'AAAA-MM-DD'.
+function mensajePropuesta(ritual, propuesta, seleccion, sustitutos, hoy) {
+  const minutos = seleccion.reduce((suma, t) => suma + t.duracion, 0);
+  const confirmada = propuesta.estado === 'confirmada';
+  const plazo = ritual.hitos.confirmacion;
+  const parametros = [
+    { key: 'ritual', value: propuesta.claveRitual },
+    { key: 'lunes', value: propuesta.lunes },
+  ];
+
+  const cabecera = confirmada
+    ? `Propuesta confirmada${propuesta.confirmadaPor ? ` por ${propuesta.confirmadaPor}` : ''} para la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}.`
+    : `Propuesta de temas para la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}.`;
+
+  const sections = [];
+  if (!seleccion.length) {
+    sections.push({
+      widgets: [
+        {
+          textParagraph: {
+            text: 'No hay ningún tema preparado en el backlog. Si no añades uno, esta semana no habrá temas que anunciar.',
+          },
+        },
+      ],
+    });
+  }
+  seleccion.forEach((t) => {
+    const detalle = [`responsable: ${t.responsable}`, `urgencia ${urgenciaEfectiva(t, hoy)}`, t.preparacion];
+    if (t.preferencia) detalle.push('aplazado de la sesión anterior');
+    sections.push({
+      widgets: [
+        {
+          decoratedText: {
+            topLabel: `${t.id} · ${t.duracion} min · ${t.tipo}`,
+            text: t.titulo,
+            bottomLabel: detalle.join(' · '),
+            wrapText: true,
+          },
+        },
+      ],
+    });
+  });
+
+  const pie = [`${minutos} de ${ritual.duracionSesionMin} minutos.`];
+  if (sustitutos.length) pie.push(`Sustitutos si alguien no confirma: ${sustitutos.map((t) => t.id).join(', ')}.`);
+  if (!confirmada) {
+    pie.push(
+      `Si no la confirmas antes del ${diaDeHito_(plazo)} a las ${plazo.hora}, no se pedirá confirmación a nadie ni se anunciará nada.`
+    );
+  }
+  const widgetsPie = [{ textParagraph: { text: pie.join('<br>') } }];
+  if (!confirmada) {
+    const botones = [];
+    if (seleccion.length)
+      botones.push({ text: 'Confirmar', onClick: { action: { function: 'confirmarPropuesta', parameters: parametros } } });
+    botones.push({
+      text: seleccion.length ? 'Cambiar tema' : 'Añadir tema',
+      onClick: { action: { function: 'abrirCambioTema', parameters: parametros, interaction: 'OPEN_DIALOG' } },
+    });
+    if (seleccion.length > 1)
+      botones.push({
+        text: 'Solo uno',
+        onClick: { action: { function: 'abrirSoloUno', parameters: parametros, interaction: 'OPEN_DIALOG' } },
+      });
+    widgetsPie.push({ buttonList: { buttons: botones } });
+  }
+  sections.push({ widgets: widgetsPie });
+
+  return { text: cabecera, cardsV2: [{ cardId: 'propuesta', card: { sections } }] };
+}
+
+// Diálogo de «Cambiar tema»: qué sale (o ninguno, para añadir) y qué entra.
+// fuera: candidatos del backlog que no están en la selección, por prioridad.
+function dialogoCambiarTema(seleccion, fuera, parametros, errores) {
+  const etiqueta = (t) => `${t.id} · ${t.duracion} min · ${t.titulo}`;
+  const widgets = [];
+  const listaErrores = Object.values(errores || {});
+  if (listaErrores.length) widgets.push({ textParagraph: { text: `<b>No se ha podido cambiar:</b><br>${listaErrores.join('<br>')}` } });
+  if (!fuera.length) {
+    widgets.push({ textParagraph: { text: 'No hay más temas preparados en el backlog.' } });
+    return { header: { title: 'Cambiar tema' }, sections: [{ widgets }] };
+  }
+  widgets.push(
+    {
+      selectionInput: {
+        name: 'sale',
+        label: 'Sale de la propuesta',
+        type: 'DROPDOWN',
+        items: [{ text: 'Ninguno: añadirlo si cabe', value: '', selected: !seleccion.length }].concat(
+          seleccion.map((t, i) => ({ text: etiqueta(t), value: t.id, selected: i === 0 }))
+        ),
+      },
+    },
+    {
+      selectionInput: {
+        name: 'entra',
+        label: 'Entra en su lugar',
+        type: 'DROPDOWN',
+        items: fuera.map((t, i) => ({ text: etiqueta(t), value: t.id, selected: i === 0 })),
+      },
+    },
+    {
+      buttonList: {
+        buttons: [{ text: 'Aplicar cambio', onClick: { action: { function: 'aplicarCambioTema', parameters: parametros } } }],
+      },
+    }
+  );
+  return { header: { title: 'Cambiar tema' }, sections: [{ widgets }] };
+}
+
+// Diálogo de «Solo uno»: elige el único tema que se queda.
+function dialogoSoloUno(seleccion, parametros) {
+  return {
+    header: { title: 'Quedarse con un solo tema' },
+    sections: [
+      {
+        widgets: [
+          {
+            selectionInput: {
+              name: 'queda',
+              label: 'Tema que se queda, con toda la sesión para él',
+              type: 'RADIO_BUTTON',
+              items: seleccion.map((t, i) => ({ text: `${t.id} · ${t.titulo}`, value: t.id, selected: i === 0 })),
+            },
+          },
+          {
+            buttonList: {
+              buttons: [{ text: 'Quedarme con este', onClick: { action: { function: 'aplicarSoloUno', parameters: parametros } } }],
+            },
+          },
+        ],
+      },
+    ],
+  };
+}
+
+// Aviso del martes cuando la propuesta no se confirmó.
+function mensajeSinConfirmar(ritual, sesion) {
+  return {
+    text:
+      `No confirmaste la propuesta de temas para la ${ritual.nombre} del ${fechaLarga(sesion)}. ` +
+      'Esta semana no se pedirá confirmación a los responsables ni se anunciará nada.',
+  };
+}

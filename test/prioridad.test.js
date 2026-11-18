@@ -98,3 +98,16 @@ test('«Cambiar tema» acepta un candidato que quepa y rechaza el resto', () => 
   );
   assert.ok(cambiarTema([a, b], 'DR-B', a, 60).errores.id);
 });
+
+test('«Cambiar tema» sin tema que sale añade uno si hay hueco', () => {
+  const cambiarTema = simbolo('cambiarTema');
+  const a = tema({ id: 'DR-A', duracion: 30 });
+  const tardio = tema({ id: 'DR-T', duracion: 15, fechaAlta: HOY });
+  assert.deepEqual(ids(cambiarTema([a], null, tardio, 60).seleccion), ['DR-A', 'DR-T']);
+  assert.ok(cambiarTema([a, tema({ duracion: 30 })], null, tardio, 60).errores.duracion);
+});
+
+test('los sustitutos se recalculan tras cambiar la selección', () => {
+  const temas = [tema({ id: 'DR-A' }), tema({ id: 'DR-B' }), tema({ id: 'DR-C', preparacion: 'La tendré para la sesión' })];
+  assert.deepEqual(ids(simbolo('sustitutosPara')(temas, [temas[1]], HOY)), ['DR-A']);
+});

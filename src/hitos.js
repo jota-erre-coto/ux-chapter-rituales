@@ -15,6 +15,12 @@ const MANEJADORES_HITO_ = {
   sinSesion(ritual, { lunes }) {
     publicarEnEspacio_(ritual.espacio, mensajeSinSesion(ritual, lunes));
   },
+  propuesta(ritual, contexto) {
+    lanzarPropuesta_(ritual, contexto);
+  },
+  confirmacion(ritual, contexto) {
+    revisarConfirmacionPropuesta_(ritual, contexto);
+  },
 };
 
 function ejecutarHitos() {
@@ -53,6 +59,9 @@ function lanzarHito_(ritual, hito) {
   const ahoraLocal = Utilities.formatDate(new Date(), ritual.zonaHoraria, "yyyy-MM-dd'T'HH:mm");
   const lunes = lunesDe(ahoraLocal.slice(0, 10));
   const sesion = sesionesDeLaSemana_(ritual, lunes).sort()[0] || null;
+  if (!sesion && hito !== 'convocatoria' && hito !== HITO_SIN_SESION) {
+    throw new Error('Esta semana no hay sesión en el calendario.');
+  }
   const efectivo = hito === 'convocatoria' && !sesion ? HITO_SIN_SESION : hito;
   MANEJADORES_HITO_[efectivo](ritual, { sesion, lunes });
   return efectivo;
