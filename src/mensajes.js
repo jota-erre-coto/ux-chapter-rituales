@@ -197,7 +197,9 @@ function seccionTema_(tema, hoy, permisos, mostrarResponsable) {
   const widgets = [
     {
       decoratedText: {
-        topLabel: `${tema.id} · ${tema.estado}`,
+        topLabel: tema.fechaAlta
+          ? `${tema.id} · ${fechaCorta(tema.fechaAlta)} · ${tema.estado}`
+          : `${tema.id} · ${tema.estado}`,
         text: tema.titulo,
         bottomLabel: detalle.join(' · '),
         wrapText: true,
@@ -249,6 +251,12 @@ const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', '
 function fechaLarga(fecha) {
   const d = new Date(`${fecha}T00:00:00Z`);
   return `${DIAS_SEMANA[d.getUTCDay()]} ${d.getUTCDate()} de ${MESES[d.getUTCMonth()]}`;
+}
+
+// 'AAAA-MM-DD' → '3 nov 2026'.
+function fechaCorta(fecha) {
+  const d = new Date(`${fecha}T00:00:00Z`);
+  return `${d.getUTCDate()} ${MESES[d.getUTCMonth()].slice(0, 3)} ${d.getUTCFullYear()}`;
 }
 
 // Convocatoria del lunes: mensaje con botón que abre el diálogo de alta.

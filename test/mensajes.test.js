@@ -134,3 +134,10 @@ test('la propuesta confirmada no tiene botones y una vacía solo deja añadir', 
   const vacia = mensajePropuesta(ritualPropuesta, Object.assign({ estado: 'pendiente' }, base), [], [], '2026-11-23');
   assert.deepEqual(botonesDe(vacia), ['Añadir tema']);
 });
+
+test('cada tema de /mis-temas muestra su fecha de alta', () => {
+  const tema = { id: 'DR-001', titulo: 'Tag', estado: 'propuesto', tipo: 'Informar', duracion: 15,
+    urgencia: 3, preparacion: 'Lista', fechaAlta: '2026-11-03', responsable: 'atoca@civitatis.com' };
+  const tarjeta = conPrioridad('dialogoMisTemas')([tema], [], '2026-11-18', () => ({}));
+  assert.equal(tarjeta.sections[0].widgets[0].decoratedText.topLabel, 'DR-001 · 3 nov 2026 · propuesto');
+});
