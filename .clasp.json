@@ -13,5 +13,6 @@
     ".json"
   ],
   "filePushOrder": [],
-  "skipSubdirectories": false
+  "skipSubdirectories": false,
+  "projectId": "ux-chapter-rituales"
 }
