@@ -13,7 +13,7 @@ function doPost(e) {
     resultado = ejecutarOperacion_(email, JSON.parse(e.postData.contents));
   } catch (error) {
     console.error(`Error en el servicio del registro: ${error.stack}`);
-    resultado = fallo_('servicio', 'Ha fallado el registro de temas. Inténtalo de nuevo en un momento.');
+    resultado = fallo_('servicio', 'No se ha podido completar la acción en el registro de temas. Inténtalo de nuevo en un momento.');
   }
   return ContentService.createTextOutput(JSON.stringify(resultado)).setMimeType(
     ContentService.MimeType.JSON
@@ -53,7 +53,7 @@ const OPERACIONES_SERVICIO_ = {
 
   editar(ritual, actor, { id, valores }) {
     const tema = buscarTema_(ritual, id);
-    if (!tema) return fallo_('id', `No encuentro el tema ${id} en el registro.`);
+    if (!tema) return fallo_('id', `No se encuentra el tema ${id} en el registro.`);
     const resultado = editarTema(tema, valores, actor);
     if (resultado.ok) actualizarTema_(ritual, resultado.tema);
     return resultado;
@@ -65,7 +65,7 @@ const OPERACIONES_SERVICIO_ = {
     const temas = leerTemas_(ritual);
     const resultados = ids.map((id) => {
       const tema = temas.find((t) => t.id === id);
-      return tema ? seleccionarTema(tema, actor, ritual) : fallo_('id', `No encuentro el tema ${id} en el registro.`);
+      return tema ? seleccionarTema(tema, actor, ritual) : fallo_('id', `No se encuentra el tema ${id} en el registro.`);
     });
     const fallidos = resultados.filter((r) => !r.ok);
     if (fallidos.length) {
@@ -79,7 +79,7 @@ const OPERACIONES_SERVICIO_ = {
   // la petición sin botones. Va por el servicio porque solo su dueño habla como la app.
   confirmar(ritual, actor, { lunes, id, contexto, enlace }) {
     const tema = buscarTema_(ritual, id);
-    if (!tema) return fallo_('id', `No encuentro el tema ${id} en el registro.`);
+    if (!tema) return fallo_('id', `No se encuentra el tema ${id} en el registro.`);
     const completado = completarTema(tema, { contexto, enlace }, actor);
     if (!completado.ok) return completado;
     const error = responderRonda_(ritual, lunes, id, CONFIRMACION.confirmado);
@@ -92,7 +92,7 @@ const OPERACIONES_SERVICIO_ = {
   // «No puedo»: registra la respuesta, devuelve el tema al backlog y ofrece sustituto.
   noPuedo(ritual, actor, { lunes, id }) {
     const tema = buscarTema_(ritual, id);
-    if (!tema) return fallo_('id', `No encuentro el tema ${id} en el registro.`);
+    if (!tema) return fallo_('id', `No se encuentra el tema ${id} en el registro.`);
     const liberado = liberarTema(tema, actor, ritual);
     if (!liberado.ok) return liberado;
     if (tema.responsable !== actor.email) return fallo_('actor', 'Solo su responsable puede responder por este tema.');
@@ -108,7 +108,7 @@ const OPERACIONES_SERVICIO_ = {
     const temas = leerTemas_(ritual);
     const resultados = ids.map((id) => {
       const tema = temas.find((t) => t.id === id);
-      return tema ? liberarTema(tema, actor, ritual) : fallo_('id', `No encuentro el tema ${id} en el registro.`);
+      return tema ? liberarTema(tema, actor, ritual) : fallo_('id', `No se encuentra el tema ${id} en el registro.`);
     });
     const fallidos = resultados.filter((r) => !r.ok);
     if (fallidos.length) return { ok: false, errores: Object.assign({}, ...fallidos.map((r) => r.errores)) };
@@ -130,7 +130,7 @@ const OPERACIONES_SERVICIO_ = {
   // Anota en el registro el enlace al hilo del anuncio de cada tema.
   anotarHilos(ritual, actor, { hilos }) {
     if (![ritual.organizador, ritual.suplente].includes(actor.email)) {
-      return fallo_('actor', 'Solo el organizador o el suplente anuncian la sesión.');
+      return fallo_('actor', 'Solo el organizador o el suplente pueden anunciar la sesión.');
     }
     const temas = leerTemas_(ritual)
       .filter((t) => hilos[t.id])
@@ -147,7 +147,7 @@ const OPERACIONES_SERVICIO_ = {
 
   descartar(ritual, actor, { id }) {
     const tema = buscarTema_(ritual, id);
-    if (!tema) return fallo_('id', `No encuentro el tema ${id} en el registro.`);
+    if (!tema) return fallo_('id', `No se encuentra el tema ${id} en el registro.`);
     const resultado = descartarTema(tema, actor, ritual);
     if (resultado.ok) actualizarTema_(ritual, resultado.tema);
     return resultado;
@@ -181,6 +181,6 @@ function llamarServicio_(accion, ritual, datos) {
       `Respuesta no válida del servicio (HTTP ${respuesta.getResponseCode()}): ` +
         respuesta.getContentText().slice(0, 500)
     );
-    return fallo_('servicio', 'No se ha podido contactar con el registro de temas. Inténtalo de nuevo.');
+    return fallo_('servicio', 'No se ha podido acceder al registro de temas. Inténtalo de nuevo en un momento.');
   }
 }
