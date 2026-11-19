@@ -163,8 +163,8 @@ function textoAvisoAsignacion(tema, quienAsigna) {
 // Respuesta a quien asigna, según se haya podido avisar o no al responsable.
 function textoTemaAsignado(tema, avisado) {
   const aviso = avisado
-    ? `He avisado a ${tema.responsable} por mensaje privado.`
-    : `No he podido avisar a ${tema.responsable}: todavía no ha abierto un chat con la app. Avísale tú.`;
+    ? `Se ha avisado a ${tema.responsable} por mensaje privado.`
+    : `No se ha podido avisar a ${tema.responsable}: todavía no ha abierto un chat con la app. Avísale tú.`;
   return `Tema ${tema.id} asignado a ${tema.responsable}: «${tema.titulo}».\n${aviso}`;
 }
 
@@ -410,7 +410,7 @@ function mensajePropuesta(ritual, propuesta, seleccion, sustitutos, hoy) {
     });
     if (seleccion.length > 1)
       botones.push({
-        text: 'Solo uno',
+        text: 'Dejar solo uno',
         onClick: { action: { function: 'abrirSoloUno', parameters: parametros, interaction: 'OPEN_DIALOG' } },
       });
     widgetsPie.push({ buttonList: { buttons: botones } });
@@ -476,7 +476,7 @@ function dialogoSoloUno(seleccion, parametros) {
           },
           {
             buttonList: {
-              buttons: [{ text: 'Quedarme con este', onClick: { action: { function: 'aplicarSoloUno', parameters: parametros } } }],
+              buttons: [{ text: 'Quedarse con este', onClick: { action: { function: 'aplicarSoloUno', parameters: parametros } } }],
             },
           },
         ],
@@ -489,7 +489,7 @@ function dialogoSoloUno(seleccion, parametros) {
 function mensajeSinConfirmar(ritual, sesion) {
   return {
     text:
-      `No confirmaste la propuesta de temas para la ${ritual.nombre} del ${fechaLarga(sesion)}. ` +
+      `La propuesta de temas para la ${ritual.nombre} del ${fechaLarga(sesion)} sigue sin confirmar. ` +
       'Esta semana no se pedirá confirmación a los responsables ni se anunciará nada.',
   };
 }
@@ -522,7 +522,7 @@ function mensajePeticionConfirmacion(ritual, propuesta, tema) {
   return {
     text:
       `Tu tema ${tema.id} está en la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}: «${tema.titulo}».\n` +
-      `Confírmalo antes de las ${plazo.hora} de hoy. Si no puedes, avísalo y entrará otro tema en su lugar.` +
+      `Confírmalo antes de las ${plazo.hora} de hoy. Si no puedes llevarlo, pulsa «No puedo» y entrará otro tema en su lugar.` +
       (faltaInfo ? '\nAl confirmarlo, completa el contexto y el enlace para que el Chapter llegue preparado.' : ''),
     cardsV2: tarjeta_('confirmacion', [
       {
@@ -592,7 +592,7 @@ function mensajeOfertaSustituto(ritual, propuesta, sale, entra, motivo) {
       },
       botones_([
         { text: 'Sustituir', onClick: { action: { function: 'aplicarSustitucion', parameters: parametros } } },
-        { text: 'Sin sustituto', onClick: { action: { function: 'rechazarSustitucion', parameters: parametros } } },
+        { text: 'No sustituir', onClick: { action: { function: 'rechazarSustitucion', parameters: parametros } } },
       ])
     );
   } else {
@@ -642,7 +642,7 @@ function mensajeSinTemasDecidido(decision) {
   return {
     text:
       decision === 'cancelar'
-        ? 'Decidido: esta semana se cancela la sesión. Se publicará en el espacio a la hora del anuncio.'
+        ? 'Decidido: esta semana se cancela la sesión. Se avisará en el espacio a la hora del anuncio.'
         : 'Decidido: la sesión se anunciará como abierta, sin temas preparados.',
     cardsV2: [],
   };
@@ -653,7 +653,7 @@ const ANTES_DE_LA_SESION = {
   'Decidir entre opciones': 'Revisa las opciones y llega con una preferencia razonada.',
   'Validar una propuesta': 'Revisa la propuesta y apunta lo que te haga dudar.',
   'Abrir un debate': 'Piensa tu postura y trae algún ejemplo que la apoye.',
-  Informar: 'Basta con echar un vistazo al enlace; no hace falta preparar nada.',
+  Informar: 'Basta con echar un vistazo al enlace. No hace falta preparar nada.',
 };
 
 function antesDeLaSesion(tipo) {
@@ -666,7 +666,7 @@ function mensajeAnuncio(ritual, sesion, temas, facilita) {
   const lista = temas.map((t) => `• ${t.id} «${t.titulo}» · ${t.responsable} · ${t.duracion} min`).join('\n');
   return {
     text:
-      `${ritual.nombre} del ${fechaLarga(sesion)}. Facilita ${facilita}.\n` +
+      `${ritual.nombre} del ${fechaLarga(sesion)}. La sesión la facilita ${facilita}.\n` +
       `Temas (${minutos} min):\n${lista}\n` +
       'Cada tema tiene su hilo justo debajo: deja ahí tus dudas antes de la sesión.',
     cardsV2: tarjeta_('anuncio', [botones_([botonActa_(ritual)])]),
@@ -695,7 +695,7 @@ function mensajeTemaAnunciado(tema) {
 function mensajeSesionAbierta(ritual, sesion, facilita) {
   return {
     text:
-      `${ritual.nombre} del ${fechaLarga(sesion)}: sesión abierta, sin temas preparados. Facilita ${facilita}.\n` +
+      `${ritual.nombre} del ${fechaLarga(sesion)}: sesión abierta, sin temas preparados. La sesión la facilita ${facilita}.\n` +
       'Trae lo que tengas entre manos y lo vemos en el momento.',
     cardsV2: tarjeta_('anuncio-abierta', [botones_([botonActa_(ritual)])]),
   };

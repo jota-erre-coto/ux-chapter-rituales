@@ -31,7 +31,7 @@ function onAppCommand(event) {
     if (!ritual) return abrirDialogo_(dialogoAviso('Este espacio no tiene ningún ritual configurado.'));
     return abrirDialogo_(construirMisTemas_(ritual, actorDe_(event)));
   }
-  return abrirDialogo_(dialogoAviso('No conozco ese comando.'));
+  return abrirDialogo_(dialogoAviso('Ese comando no existe. Prueba con /tema o /mis-temas.'));
 }
 
 // /tema y el botón «Proponer tema» de la convocatoria: abre el diálogo de alta.
@@ -56,7 +56,7 @@ function lanzarHitoManual(event) {
     return cerrarConMensaje_(`Hito ${lanzado} lanzado.`, event);
   } catch (error) {
     console.error(`Error al lanzar el hito ${hito}: ${error.stack}`);
-    return cerrarConMensaje_(`No se ha podido lanzar el hito ${hito}: ${error.message}`, event);
+    return cerrarConMensaje_(`No se ha podido lanzar el hito ${hito}. Inténtalo de nuevo en un momento.`, event);
   }
 }
 
@@ -160,7 +160,7 @@ function contextoBoton_(event) {
   if (!ritual) return { error: 'Este espacio no tiene ningún ritual configurado.' };
   const id = (event.commonEventObject.parameters || {}).id;
   const tema = id && buscarTema_(ritual, id);
-  if (!tema) return { error: `No encuentro el tema ${id || ''} en el registro.` };
+  if (!tema) return { error: `No se encuentra el tema ${id || ''} en el registro.` };
   return { ritual, tema };
 }
 
