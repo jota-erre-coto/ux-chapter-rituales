@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { cargar } = require('./cargar');
 
-const simbolo = cargar('dominio.js', 'prioridad.js', 'confirmacion.js', 'mensajes.js', 'acta.js');
+const simbolo = cargar('dominio.js', 'prioridad.js', 'mensajes.js', 'acta.js');
 const redactar = simbolo('redactarEntradaActa');
 const plano = (x) => JSON.parse(JSON.stringify(x));
 
