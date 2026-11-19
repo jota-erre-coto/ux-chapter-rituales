@@ -46,8 +46,8 @@ function lanzarPropuesta_(ritual, { sesion, lunes }) {
   guardarPropuesta_(propuesta);
 }
 
-// Hito del martes a las 11:00. La confirmación a los responsables llega en el #10;
-// por ahora solo se avisa si nadie confirmó, al organizador o a su suplente.
+// Parte del hito del martes a las 11:00 (ver ronda.js): si nadie confirmó la propuesta,
+// se avisa al organizador o a su suplente y no se pide confirmación a nadie.
 function revisarConfirmacionPropuesta_(ritual, { sesion, lunes }) {
   const propuesta = leerPropuesta_(claveDeRitual_(ritual), lunes);
   if (propuesta && propuesta.estado === 'confirmada') return;

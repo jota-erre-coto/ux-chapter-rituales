@@ -19,7 +19,10 @@ const MANEJADORES_HITO_ = {
     lanzarPropuesta_(ritual, contexto);
   },
   confirmacion(ritual, contexto) {
-    revisarConfirmacionPropuesta_(ritual, contexto);
+    lanzarConfirmaciones_(ritual, contexto);
+  },
+  plazoSustitucion(ritual, contexto) {
+    revisarPlazo_(ritual, contexto);
   },
 };
 
