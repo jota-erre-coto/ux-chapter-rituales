@@ -24,6 +24,9 @@ const MANEJADORES_HITO_ = {
   plazoSustitucion(ritual, contexto) {
     revisarPlazo_(ritual, contexto);
   },
+  anuncio(ritual, contexto) {
+    anunciar_(ritual, contexto);
+  },
 };
 
 function ejecutarHitos() {
@@ -45,7 +48,13 @@ function ejecutarHitosDelRitual_(clave, ritual) {
   const claveEjecutados = `hitos:${clave}:${lunes}`;
   const ejecutados = JSON.parse(propiedades.getProperty(claveEjecutados) || '[]');
 
-  const pendientes = hitosPendientes(ritual, ahoraLocal, sesionesDeLaSemana_(ritual, lunes), ejecutados)
+  const sesiones = sesionesDeLaSemana_(ritual, lunes);
+  try {
+    revisarCancelacion_(ritual, { lunes, sesiones, hoy: ahoraLocal.slice(0, 10) });
+  } catch (error) {
+    console.error(`Error al revisar la cancelación de ${clave}: ${error.stack}`);
+  }
+  const pendientes = hitosPendientes(ritual, ahoraLocal, sesiones, ejecutados)
     .filter((h) => MANEJADORES_HITO_[h.hito]);
   pendientes.forEach((h) => {
     MANEJADORES_HITO_[h.hito](ritual, { sesion: h.sesion, lunes });

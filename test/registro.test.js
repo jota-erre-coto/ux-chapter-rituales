@@ -39,7 +39,7 @@ test('una fila del registro vuelve a ser el mismo tema', () => {
       { email: 'atoca@civitatis.com' },
       '2026-11-03'
     ).tema,
-    { id: 'DR-004', sesiones: ['2026-11-11', '2026-11-18'], prioridad: '' }
+    { id: 'DR-004', sesiones: ['2026-11-11', '2026-11-18'], prioridad: '', hilo: '' }
   );
   const vuelta = simbolo('filaATema')(cabeceras, simbolo('temaAFila_')(tema));
   assert.deepEqual(JSON.parse(JSON.stringify(vuelta)), JSON.parse(JSON.stringify(tema)));

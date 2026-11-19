@@ -10,13 +10,7 @@ function doPost(e) {
   let resultado;
   try {
     const email = String(Session.getActiveUser().getEmail() || '').toLowerCase();
-    const peticion = JSON.parse(e.postData.contents);
-    const ritual = RITUALES[peticion.ritual];
-    const operacion = OPERACIONES_SERVICIO_[peticion.accion];
-    if (!email) resultado = fallo_('actor', 'No se ha podido identificar a quien hace la petición.');
-    else if (!ritual) resultado = fallo_('ritual', 'Ese ritual no existe.');
-    else if (!operacion) resultado = fallo_('accion', 'Esa acción no existe.');
-    else resultado = operacion(ritual, { email, nombre: peticion.nombre }, peticion);
+    resultado = ejecutarOperacion_(email, JSON.parse(e.postData.contents));
   } catch (error) {
     console.error(`Error en el servicio del registro: ${error.stack}`);
     resultado = fallo_('servicio', 'Ha fallado el registro de temas. Inténtalo de nuevo en un momento.');
@@ -24,6 +18,15 @@ function doPost(e) {
   return ContentService.createTextOutput(JSON.stringify(resultado)).setMimeType(
     ContentService.MimeType.JSON
   );
+}
+
+function ejecutarOperacion_(email, peticion) {
+  const ritual = RITUALES[peticion.ritual];
+  const operacion = OPERACIONES_SERVICIO_[peticion.accion];
+  if (!email) return fallo_('actor', 'No se ha podido identificar a quien hace la petición.');
+  if (!ritual) return fallo_('ritual', 'Ese ritual no existe.');
+  if (!operacion) return fallo_('accion', 'Esa acción no existe.');
+  return operacion(ritual, { email, nombre: peticion.nombre }, peticion);
 }
 
 const OPERACIONES_SERVICIO_ = {
@@ -113,6 +116,29 @@ const OPERACIONES_SERVICIO_ = {
     return { ok: true, temas: resultados.map((r) => r.tema) };
   },
 
+  // Sesión cancelada: los temas seleccionados vuelven con preferencia. Los que ya no
+  // están seleccionados se dejan como están.
+  aplazar(ritual, actor, { ids }) {
+    const temas = leerTemas_(ritual).filter((t) => ids.includes(t.id) && t.estado === ESTADOS.seleccionado);
+    const resultados = temas.map((tema) => aplazarTema(tema, actor, ritual));
+    const fallidos = resultados.filter((r) => !r.ok);
+    if (fallidos.length) return { ok: false, errores: Object.assign({}, ...fallidos.map((r) => r.errores)) };
+    resultados.forEach((r) => actualizarTema_(ritual, r.tema));
+    return { ok: true, temas: resultados.map((r) => r.tema) };
+  },
+
+  // Anota en el registro el enlace al hilo del anuncio de cada tema.
+  anotarHilos(ritual, actor, { hilos }) {
+    if (![ritual.organizador, ritual.suplente].includes(actor.email)) {
+      return fallo_('actor', 'Solo el organizador o el suplente anuncian la sesión.');
+    }
+    const temas = leerTemas_(ritual)
+      .filter((t) => hilos[t.id])
+      .map((t) => Object.assign({}, t, { hilo: hilos[t.id] }));
+    actualizarTemas_(ritual, temas);
+    return { ok: true };
+  },
+
   // Si el organizador está fuera de la oficina hoy. Solo lo puede leer su cuenta, que
   // es la que ejecuta el servicio.
   ausencia(ritual) {
@@ -132,8 +158,15 @@ function fallo_(campo, mensaje) {
   return { ok: false, errores: { [campo]: mensaje } };
 }
 
-// Lado cliente: llama al servicio con la sesión de quien usa la app.
+// Lado cliente: llama al servicio con la sesión de quien usa la app. Si quien la usa
+// es la cuenta dueña, ejecuta la operación aquí mismo: el resultado es el mismo y se
+// ahorra la llamada por la red, que en los hitos lanzados a mano rozaba los 30 s.
 function llamarServicio_(accion, ritual, datos) {
+  const email = Session.getEffectiveUser().getEmail().toLowerCase();
+  if (email === CUENTA_DUENA) {
+    const peticion = Object.assign({ accion, ritual: claveDeRitual_(ritual) }, datos);
+    return JSON.parse(JSON.stringify(ejecutarOperacion_(email, peticion)));
+  }
   const respuesta = UrlFetchApp.fetch(URL_SERVICIO_REGISTRO, {
     method: 'post',
     contentType: 'application/json',
