@@ -113,6 +113,30 @@ const OPERACIONES_SERVICIO_ = {
     return { ok: true, temas: resultados.map((r) => r.tema) };
   },
 
+  // Sesión cancelada: los temas seleccionados vuelven con preferencia. Los que ya no
+  // están seleccionados se dejan como están.
+  aplazar(ritual, actor, { ids }) {
+    const temas = leerTemas_(ritual).filter((t) => ids.includes(t.id) && t.estado === ESTADOS.seleccionado);
+    const resultados = temas.map((tema) => aplazarTema(tema, actor, ritual));
+    const fallidos = resultados.filter((r) => !r.ok);
+    if (fallidos.length) return { ok: false, errores: Object.assign({}, ...fallidos.map((r) => r.errores)) };
+    resultados.forEach((r) => actualizarTema_(ritual, r.tema));
+    return { ok: true, temas: resultados.map((r) => r.tema) };
+  },
+
+  // Anota en el registro el enlace al hilo del anuncio de cada tema.
+  anotarHilos(ritual, actor, { hilos }) {
+    if (![ritual.organizador, ritual.suplente].includes(actor.email)) {
+      return fallo_('actor', 'Solo el organizador o el suplente anuncian la sesión.');
+    }
+    const temas = leerTemas_(ritual);
+    Object.keys(hilos).forEach((id) => {
+      const tema = temas.find((t) => t.id === id);
+      if (tema) actualizarTema_(ritual, Object.assign({}, tema, { hilo: hilos[id] }));
+    });
+    return { ok: true };
+  },
+
   // Si el organizador está fuera de la oficina hoy. Solo lo puede leer su cuenta, que
   // es la que ejecuta el servicio.
   ausencia(ritual) {

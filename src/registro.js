@@ -21,6 +21,7 @@ const COLUMNAS_REGISTRO = [
   ['preferencia', 'Preferencia'],
   ['sesiones', 'Sesiones'],
   [null, 'Notas'],
+  ['hilo', 'Hilo del anuncio'],
 ];
 
 // Guarda un tema nuevo, le asigna el siguiente ID del ritual y devuelve el tema con su ID.
@@ -64,8 +65,11 @@ function actualizarTema_(ritual, tema) {
     const ids = hoja.getRange(1, 1, hoja.getLastRow(), 1).getValues().map(([v]) => String(v));
     const fila = ids.indexOf(tema.id) + 1;
     if (fila < 2) throw new Error(`No existe el tema ${tema.id} en el registro.`);
-    const columnas = COLUMNAS_REGISTRO.filter(([campo]) => campo).length;
-    hoja.getRange(fila, 1, 1, columnas).setValues([temaAFila_(tema).slice(0, columnas)]);
+    // Las columnas sin campo (Notas) conservan lo que haya escrito a mano.
+    const rango = hoja.getRange(fila, 1, 1, COLUMNAS_REGISTRO.length);
+    const actual = rango.getValues()[0];
+    const nueva = temaAFila_(tema).map((valor, i) => (COLUMNAS_REGISTRO[i][0] ? valor : actual[i]));
+    rango.setValues([nueva]);
     protegerHoja_(hoja);
   } finally {
     bloqueo.releaseLock();
@@ -92,10 +96,17 @@ function hojaTemas_(ritual) {
     hoja = libro.getSheets()[0];
     hoja.setName(NOMBRE_HOJA_TEMAS);
   }
+  const cabeceras = COLUMNAS_REGISTRO.map(([, cabecera]) => cabecera);
   if (hoja.getLastRow() <= 1) {
-    const cabeceras = COLUMNAS_REGISTRO.map(([, cabecera]) => cabecera);
     hoja.getRange(1, 1, 1, cabeceras.length).setValues([cabeceras]).setFontWeight('bold');
     hoja.setFrozenRows(1);
+  } else if (hoja.getLastColumn() < cabeceras.length) {
+    // Registro creado con una versión anterior: añade al final las columnas nuevas.
+    const desde = hoja.getLastColumn();
+    hoja
+      .getRange(1, desde + 1, 1, cabeceras.length - desde)
+      .setValues([cabeceras.slice(desde)])
+      .setFontWeight('bold');
   }
   return hoja;
 }

@@ -200,3 +200,12 @@ test('un tema seleccionado vuelve al backlog por su responsable, el organizador 
   assert.ok(liberar(seleccionado, { email: 'atoca@civitatis.com' }, ritual).errores.actor);
   assert.ok(liberar(temaDe({}), actor, ritual).errores.estado);
 });
+
+test('al cancelarse la sesión, un tema seleccionado vuelve con preferencia', () => {
+  const aplazar = simbolo('aplazarTema');
+  const r = aplazar(temaDe({ estado: 'seleccionado' }), jcoto, ritual);
+  assert.equal(r.tema.estado, 'propuesto');
+  assert.equal(r.tema.preferencia, true);
+  assert.ok(aplazar(temaDe({ estado: 'seleccionado' }), actor, ritual).errores.actor);
+  assert.ok(aplazar(temaDe({}), jcoto, ritual).errores.estado);
+});

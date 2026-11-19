@@ -184,3 +184,40 @@ test('sin temas, se pregunta si cancelar o anunciar una sesión abierta', () => 
   const m = conRonda('mensajeSinTemas')(ritualRonda, propuestaRonda);
   assert.deepEqual(botonesTarjeta(m).map((b) => b.text), ['Cancelar la sesión', 'Anunciar sesión abierta']);
 });
+
+const conAnuncio = cargar('dominio.js', 'prioridad.js', 'confirmacion.js', 'mensajes.js');
+const ritualAnuncio = { nombre: 'Design Review', actaId: 'ACTA' };
+
+test('el anuncio dice fecha, quién facilita, los temas y enlaza el acta', () => {
+  const m = conAnuncio('mensajeAnuncio')(ritualAnuncio, '2026-11-25',
+    [temaPropuesto({ id: 'DR-1' }), temaPropuesto({ id: 'DR-2', duracion: 15 })], 'jcoto@civitatis.com');
+  assert.match(m.text, /miércoles 25 de noviembre\. Facilita jcoto@civitatis\.com/);
+  assert.match(m.text, /Temas \(45 min\)/);
+  assert.match(m.text, /DR-2 «Tag» · atoca@civitatis\.com · 15 min/);
+  const boton = m.cardsV2[0].card.sections[0].widgets[0].buttonList.buttons[0];
+  assert.equal(boton.onClick.openLink.url, 'https://docs.google.com/document/d/ACTA/edit');
+});
+
+test('el «Antes de la sesión» cambia según el tipo de feedback', () => {
+  const antes = conAnuncio('antesDeLaSesion');
+  const textos = ['Decidir entre opciones', 'Validar una propuesta', 'Abrir un debate', 'Informar'].map(antes);
+  assert.equal(new Set(textos).size, 4);
+  const m = conAnuncio('mensajeTemaAnunciado')(temaPropuesto({ tipo: 'Informar', contexto: 'Traslados', enlace: 'https://figma.com/x' }));
+  const json = JSON.stringify(m.cardsV2);
+  assert.match(json, /Antes de la sesión/);
+  assert.match(json, /no hace falta preparar nada/);
+  assert.match(json, /Traslados/);
+  assert.match(json, /https:\/\/figma\.com\/x/);
+});
+
+test('un tema sin contexto ni enlace se anuncia sin esos bloques', () => {
+  const json = JSON.stringify(conAnuncio('mensajeTemaAnunciado')(temaPropuesto({ contexto: '', enlace: '' })).cardsV2);
+  assert.doesNotMatch(json, /Contexto/);
+  assert.doesNotMatch(json, /Abrir enlace/);
+});
+
+test('la cancelación avisa de que los temas pasan con preferencia solo si los había', () => {
+  const cancelar = conAnuncio('mensajeCancelacion');
+  assert.match(cancelar(ritualAnuncio, '2026-11-25', true).text, /pasan con preferencia/);
+  assert.doesNotMatch(cancelar(ritualAnuncio, '2026-11-25', false).text, /preferencia/);
+});
