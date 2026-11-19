@@ -72,6 +72,47 @@ const OPERACIONES_SERVICIO_ = {
     return { ok: true, temas: resultados.map((r) => r.tema) };
   },
 
+  // «Lo llevo»: completa contexto y enlace si llegan, registra la confirmación y deja
+  // la petición sin botones. Va por el servicio porque solo su dueño habla como la app.
+  confirmar(ritual, actor, { lunes, id, contexto, enlace }) {
+    const tema = buscarTema_(ritual, id);
+    if (!tema) return fallo_('id', `No encuentro el tema ${id} en el registro.`);
+    const completado = completarTema(tema, { contexto, enlace }, actor);
+    if (!completado.ok) return completado;
+    const error = responderRonda_(ritual, lunes, id, CONFIRMACION.confirmado);
+    if (error) return fallo_('id', error);
+    if (contexto || enlace) actualizarTema_(ritual, completado.tema);
+    cerrarPeticion_(ritual, lunes, completado.tema, CONFIRMACION.confirmado);
+    return { ok: true, tema: completado.tema };
+  },
+
+  // «No puedo»: registra la respuesta, devuelve el tema al backlog y ofrece sustituto.
+  noPuedo(ritual, actor, { lunes, id }) {
+    const tema = buscarTema_(ritual, id);
+    if (!tema) return fallo_('id', `No encuentro el tema ${id} en el registro.`);
+    const liberado = liberarTema(tema, actor, ritual);
+    if (!liberado.ok) return liberado;
+    if (tema.responsable !== actor.email) return fallo_('actor', 'Solo su responsable puede responder por este tema.');
+    const error = responderRonda_(ritual, lunes, id, CONFIRMACION.noPuede);
+    if (error) return fallo_('id', error);
+    actualizarTema_(ritual, liberado.tema);
+    ofrecerSustituto_(ritual, claveDeRitual_(ritual), lunes, id);
+    return { ok: true, tema: liberado.tema };
+  },
+
+  // Devuelve al backlog temas seleccionados que no se presentarán.
+  liberar(ritual, actor, { ids }) {
+    const temas = leerTemas_(ritual);
+    const resultados = ids.map((id) => {
+      const tema = temas.find((t) => t.id === id);
+      return tema ? liberarTema(tema, actor, ritual) : fallo_('id', `No encuentro el tema ${id} en el registro.`);
+    });
+    const fallidos = resultados.filter((r) => !r.ok);
+    if (fallidos.length) return { ok: false, errores: Object.assign({}, ...fallidos.map((r) => r.errores)) };
+    resultados.forEach((r) => actualizarTema_(ritual, r.tema));
+    return { ok: true, temas: resultados.map((r) => r.tema) };
+  },
+
   // Si el organizador está fuera de la oficina hoy. Solo lo puede leer su cuenta, que
   // es la que ejecuta el servicio.
   ausencia(ritual) {

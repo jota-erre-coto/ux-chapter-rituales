@@ -150,3 +150,37 @@ test('si la propuesta llega al suplente, dice por qué', () => {
   );
   assert.match(JSON.stringify(mensaje.cardsV2), /porque jcoto@civitatis.com está fuera de la oficina/);
 });
+
+const conRonda = cargar('dominio.js', 'prioridad.js', 'confirmacion.js', 'mensajes.js');
+const ritualRonda = { nombre: 'Design Review', hitos: { plazoSustitucion: { dia: 2, hora: '11:45' } } };
+const propuestaRonda = { claveRitual: 'pruebas', lunes: '2026-11-23', sesion: '2026-11-25' };
+const botonesTarjeta = (m) => {
+  const w = m.cardsV2[0].card.sections[0].widgets.find((x) => x.buttonList);
+  return [...w.buttonList.buttons];
+};
+
+test('la petición de confirmación abre diálogo solo si faltan contexto o enlace', () => {
+  const peticion = conRonda('mensajePeticionConfirmacion');
+  const sinInfo = peticion(ritualRonda, propuestaRonda, temaPropuesto({ contexto: '', enlace: '' }));
+  assert.match(sinInfo.text, /antes de las 11:45/);
+  assert.equal(botonesTarjeta(sinInfo)[0].onClick.action.interaction, 'OPEN_DIALOG');
+  assert.equal(botonesTarjeta(sinInfo)[1].text, 'No puedo');
+  const completo = peticion(ritualRonda, propuestaRonda, temaPropuesto({ contexto: 'x', enlace: 'https://a.b' }));
+  assert.equal(botonesTarjeta(completo)[0].onClick.action.function, 'confirmarTemaDirecto');
+});
+
+test('la oferta de sustituto lleva Sustituir, o solo quitar si no hay sustituto', () => {
+  const oferta = conRonda('mensajeOfertaSustituto');
+  const sale = temaPropuesto({ id: 'DR-1' });
+  const con = oferta(ritualRonda, propuestaRonda, sale, temaPropuesto({ id: 'DR-5' }), 'no_puede');
+  assert.match(con.text, /no puede presentar DR-1/);
+  assert.deepEqual(botonesTarjeta(con).map((b) => b.text), ['Sustituir', 'Sin sustituto']);
+  const sin = oferta(ritualRonda, propuestaRonda, sale, null, 'pendiente');
+  assert.match(sin.text, /no ha confirmado DR-1/);
+  assert.deepEqual(botonesTarjeta(sin).map((b) => b.text), ['Quitarlo de la sesión']);
+});
+
+test('sin temas, se pregunta si cancelar o anunciar una sesión abierta', () => {
+  const m = conRonda('mensajeSinTemas')(ritualRonda, propuestaRonda);
+  assert.deepEqual(botonesTarjeta(m).map((b) => b.text), ['Cancelar la sesión', 'Anunciar sesión abierta']);
+});

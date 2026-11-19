@@ -493,3 +493,157 @@ function mensajeSinConfirmar(ritual, sesion) {
       'Esta semana no se pedirá confirmación a los responsables ni se anunciará nada.',
   };
 }
+
+// Parámetros comunes de los botones de la ronda de confirmación.
+function parametrosRonda_(propuesta, extra) {
+  return [
+    { key: 'ritual', value: propuesta.claveRitual },
+    { key: 'lunes', value: propuesta.lunes },
+  ].concat(Object.keys(extra || {}).map((key) => ({ key, value: extra[key] })));
+}
+
+function tarjeta_(cardId, widgets) {
+  return [{ cardId, card: { sections: [{ widgets }] } }];
+}
+
+function botones_(lista) {
+  return { buttonList: { buttons: lista } };
+}
+
+// Petición del martes al responsable de un tema seleccionado. Si a su tema le falta
+// el contexto o el enlace, «Lo llevo» abre un diálogo para completarlos.
+function mensajePeticionConfirmacion(ritual, propuesta, tema) {
+  const plazo = ritual.hitos.plazoSustitucion;
+  const parametros = parametrosRonda_(propuesta, { id: tema.id });
+  const faltaInfo = !tema.contexto || !tema.enlace;
+  const llevo = faltaInfo
+    ? { text: 'Lo llevo', onClick: { action: { function: 'abrirConfirmacionTema', parameters: parametros, interaction: 'OPEN_DIALOG' } } }
+    : { text: 'Lo llevo', onClick: { action: { function: 'confirmarTemaDirecto', parameters: parametros } } };
+  return {
+    text:
+      `Tu tema ${tema.id} está en la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}: «${tema.titulo}».\n` +
+      `Confírmalo antes de las ${plazo.hora} de hoy. Si no puedes, avísalo y entrará otro tema en su lugar.` +
+      (faltaInfo ? '\nAl confirmarlo, completa el contexto y el enlace para que el Chapter llegue preparado.' : ''),
+    cardsV2: tarjeta_('confirmacion', [
+      {
+        decoratedText: {
+          topLabel: `${tema.id} · ${tema.duracion} min · ${tema.tipo}`,
+          text: tema.titulo,
+          bottomLabel: tema.preparacion,
+          wrapText: true,
+        },
+      },
+      botones_([
+        llevo,
+        { text: 'No puedo', onClick: { action: { function: 'noPuedoTema', parameters: parametros } } },
+      ]),
+    ]),
+  };
+}
+
+// Diálogo de «Lo llevo» cuando faltan contexto o enlace.
+function dialogoConfirmarTema(tema, parametros, errores) {
+  const widgets = [];
+  const listaErrores = Object.values(errores || {});
+  if (listaErrores.length) widgets.push({ textParagraph: { text: `<b>Revisa esto:</b><br>${listaErrores.join('<br>')}` } });
+  widgets.push(
+    { textParagraph: { text: `Confirmas que llevas <b>${tema.id} · ${tema.titulo}</b>.` } },
+    {
+      textInput: {
+        name: 'contexto',
+        label: 'Contexto',
+        type: 'MULTIPLE_LINE',
+        hintText: 'Qué está en juego y qué necesitas del Chapter. Admite varias líneas.',
+        value: tema.contexto || '',
+      },
+    },
+    { textInput: { name: 'enlace', label: 'Enlace (Figma, Jira…)', type: 'SINGLE_LINE', value: tema.enlace || '' } },
+    botones_([{ text: 'Confirmar', onClick: { action: { function: 'guardarConfirmacionTema', parameters: parametros } } }])
+  );
+  return { header: { title: `Confirmar ${tema.id}` }, sections: [{ widgets }] };
+}
+
+// La petición, ya respondida, sin botones.
+function mensajeConfirmacionRespondida(ritual, propuesta, tema, respuesta) {
+  const texto =
+    respuesta === CONFIRMACION.confirmado
+      ? `Confirmado: llevas ${tema.id} «${tema.titulo}» a la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}.`
+      : `Hecho: ${tema.id} «${tema.titulo}» no irá a esta sesión y vuelve al backlog.`;
+  return { text: texto, cardsV2: [] };
+}
+
+// Oferta de sustituto para el organizador (o el suplente). motivo: 'no_puede' | 'sin_respuesta'.
+function mensajeOfertaSustituto(ritual, propuesta, sale, entra, motivo) {
+  const porque =
+    motivo === CONFIRMACION.noPuede
+      ? `${sale.responsable} no puede presentar ${sale.id} «${sale.titulo}».`
+      : `${sale.responsable} no ha confirmado ${sale.id} «${sale.titulo}».`;
+  const parametros = parametrosRonda_(propuesta, { sale: sale.id, entra: entra ? entra.id : '' });
+  const widgets = [];
+  if (entra) {
+    widgets.push(
+      {
+        decoratedText: {
+          topLabel: `Sustituto · ${entra.id} · ${entra.duracion} min · ${entra.tipo}`,
+          text: entra.titulo,
+          bottomLabel: `responsable: ${entra.responsable} · ${entra.preparacion}`,
+          wrapText: true,
+        },
+      },
+      botones_([
+        { text: 'Sustituir', onClick: { action: { function: 'aplicarSustitucion', parameters: parametros } } },
+        { text: 'Sin sustituto', onClick: { action: { function: 'rechazarSustitucion', parameters: parametros } } },
+      ])
+    );
+  } else {
+    widgets.push(
+      { textParagraph: { text: 'No hay ningún tema con preparación «Lista» que quepa en su lugar.' } },
+      botones_([{ text: 'Quitarlo de la sesión', onClick: { action: { function: 'rechazarSustitucion', parameters: parametros } } }])
+    );
+  }
+  return { text: porque, cardsV2: tarjeta_('sustitucion', widgets) };
+}
+
+// La oferta ya resuelta, sin botones.
+function mensajeSustitucionResuelta(sale, entra) {
+  return {
+    text: entra
+      ? `Sustituido: ${entra.id} «${entra.titulo}» entra en lugar de ${sale.id}.`
+      : `${sale.id} «${sale.titulo}» sale de la sesión sin sustituto.`,
+    cardsV2: [],
+  };
+}
+
+// Aviso al responsable de un tema que entra como sustituto.
+function mensajeAvisoSustituto(ritual, propuesta, tema) {
+  return {
+    text:
+      `Tu tema ${tema.id} «${tema.titulo}» entra en la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)} ` +
+      'como sustituto de otro que no podrá presentarse. Como lo tenías listo, no hace falta que lo confirmes.',
+  };
+}
+
+// Cuando no queda ningún tema: cancelar la sesión o anunciarla como abierta.
+function mensajeSinTemas(ritual, propuesta) {
+  const parametros = (decision) => parametrosRonda_(propuesta, { decision });
+  return {
+    text: `No queda ningún tema confirmado para la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}.`,
+    cardsV2: tarjeta_('sin-temas', [
+      { textParagraph: { text: '¿Cancelas la sesión o la anuncias como sesión abierta, sin temas preparados?' } },
+      botones_([
+        { text: 'Cancelar la sesión', onClick: { action: { function: 'decidirSinTemas', parameters: parametros('cancelar') } } },
+        { text: 'Anunciar sesión abierta', onClick: { action: { function: 'decidirSinTemas', parameters: parametros('abierta') } } },
+      ]),
+    ]),
+  };
+}
+
+function mensajeSinTemasDecidido(decision) {
+  return {
+    text:
+      decision === 'cancelar'
+        ? 'Decidido: esta semana se cancela la sesión. Se publicará en el espacio a la hora del anuncio.'
+        : 'Decidido: la sesión se anunciará como abierta, sin temas preparados.',
+    cardsV2: [],
+  };
+}

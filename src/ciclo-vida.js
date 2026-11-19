@@ -118,6 +118,42 @@ function seleccionarTema(tema, actor, ritual) {
   return { ok: true, tema: Object.assign({}, tema, { estado: ESTADOS.seleccionado }) };
 }
 
+// Al confirmar, el responsable completa el contexto y el enlace de su tema
+// seleccionado. Solo cambia lo que trae relleno.
+function completarTema(tema, datos, actor) {
+  if (emailDe_(actor) !== tema.responsable) {
+    return { ok: false, errores: { actor: 'Solo el responsable puede confirmar este tema.' } };
+  }
+  if (tema.estado !== ESTADOS.seleccionado) {
+    return { ok: false, errores: { estado: `El tema ${tema.id} está ${tema.estado}, no seleccionado.` } };
+  }
+  const contexto = limpiar_(datos.contexto);
+  const enlace = limpiar_(datos.enlace);
+  if (enlace && !/^https?:\/\/\S+$/.test(enlace)) {
+    return { ok: false, errores: { enlace: 'El enlace tiene que empezar por https://.' } };
+  }
+  const cambios = {};
+  if (contexto) cambios.contexto = contexto;
+  if (enlace) cambios.enlace = enlace;
+  return { ok: true, tema: Object.assign({}, tema, cambios) };
+}
+
+// Devuelve al backlog un tema seleccionado que no se presentará (su responsable no
+// puede o no confirmó). Lo hacen el responsable, el organizador o el suplente.
+function liberarTema(tema, actor, ritual) {
+  const email = emailDe_(actor);
+  const autorizados = [tema.responsable, ritual.organizador, ritual.suplente].map((e) =>
+    String(e || '').toLowerCase()
+  );
+  if (!email || !autorizados.includes(email)) {
+    return { ok: false, errores: { actor: 'No puedes devolver este tema al backlog.' } };
+  }
+  if (tema.estado !== ESTADOS.seleccionado) {
+    return { ok: false, errores: { estado: `El tema ${tema.id} está ${tema.estado}, no seleccionado.` } };
+  }
+  return { ok: true, tema: Object.assign({}, tema, { estado: ESTADOS.propuesto }) };
+}
+
 // Asigna temas el organizador, y el suplente solo mientras el organizador está ausente.
 function puedeAsignar(actor, ritual, organizadorAusente) {
   const email = emailDe_(actor);
