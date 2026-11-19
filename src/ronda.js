@@ -140,7 +140,7 @@ function contextoResponsable_(event) {
   const c = contextoRonda_(event);
   if (c.error) return c;
   c.tema = c.temas.find((t) => t.id === c.parametros.id);
-  if (!c.tema) return { error: `No encuentro el tema ${c.parametros.id}.` };
+  if (!c.tema) return { error: `No se encuentra el tema ${c.parametros.id}.` };
   if (c.tema.responsable !== c.actor.email) return { error: 'Solo su responsable puede responder por este tema.' };
   return c;
 }

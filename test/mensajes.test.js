@@ -122,7 +122,7 @@ test('la propuesta pendiente muestra los temas, los minutos, el plazo y los tres
   assert.match(pie, /Sustitutos si alguien no confirma: DR-003/);
   assert.match(pie, /antes del martes a las 11:00/);
   assert.match(pie, /aplazado de la sesión anterior/);
-  assert.deepEqual(botonesDe(mensaje), ['Confirmar', 'Cambiar tema', 'Solo uno']);
+  assert.deepEqual(botonesDe(mensaje), ['Confirmar', 'Cambiar tema', 'Dejar solo uno']);
 });
 
 test('la propuesta confirmada no tiene botones y una vacía solo deja añadir', () => {
@@ -174,7 +174,7 @@ test('la oferta de sustituto lleva Sustituir, o solo quitar si no hay sustituto'
   const sale = temaPropuesto({ id: 'DR-1' });
   const con = oferta(ritualRonda, propuestaRonda, sale, temaPropuesto({ id: 'DR-5' }), 'no_puede');
   assert.match(con.text, /no puede presentar DR-1/);
-  assert.deepEqual(botonesTarjeta(con).map((b) => b.text), ['Sustituir', 'Sin sustituto']);
+  assert.deepEqual(botonesTarjeta(con).map((b) => b.text), ['Sustituir', 'No sustituir']);
   const sin = oferta(ritualRonda, propuestaRonda, sale, null, 'pendiente');
   assert.match(sin.text, /no ha confirmado DR-1/);
   assert.deepEqual(botonesTarjeta(sin).map((b) => b.text), ['Quitarlo de la sesión']);
@@ -191,7 +191,7 @@ const ritualAnuncio = { nombre: 'Design Review', actaId: 'ACTA' };
 test('el anuncio dice fecha, quién facilita, los temas y enlaza el acta', () => {
   const m = conAnuncio('mensajeAnuncio')(ritualAnuncio, '2026-11-25',
     [temaPropuesto({ id: 'DR-1' }), temaPropuesto({ id: 'DR-2', duracion: 15 })], 'jcoto@civitatis.com');
-  assert.match(m.text, /miércoles 25 de noviembre\. Facilita jcoto@civitatis\.com/);
+  assert.match(m.text, /miércoles 25 de noviembre\. La sesión la facilita jcoto@civitatis\.com/);
   assert.match(m.text, /Temas \(45 min\)/);
   assert.match(m.text, /DR-2 «Tag» · atoca@civitatis\.com · 15 min/);
   const boton = m.cardsV2[0].card.sections[0].widgets[0].buttonList.buttons[0];
@@ -205,7 +205,7 @@ test('el «Antes de la sesión» cambia según el tipo de feedback', () => {
   const m = conAnuncio('mensajeTemaAnunciado')(temaPropuesto({ tipo: 'Informar', contexto: 'Traslados', enlace: 'https://figma.com/x' }));
   const json = JSON.stringify(m.cardsV2);
   assert.match(json, /Antes de la sesión/);
-  assert.match(json, /no hace falta preparar nada/);
+  assert.match(json, /No hace falta preparar nada/);
   assert.match(json, /Traslados/);
   assert.match(json, /https:\/\/figma\.com\/x/);
 });
