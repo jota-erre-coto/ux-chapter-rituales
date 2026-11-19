@@ -56,6 +56,25 @@ function buscarTema_(ritual, id) {
   return leerTemas_(ritual).find((tema) => tema.id === id) || null;
 }
 
+// Reescribe varias filas a la vez, con un solo bloqueo y una sola lectura de IDs.
+function actualizarTemas_(ritual, temas) {
+  if (!temas.length) return;
+  const bloqueo = LockService.getScriptLock();
+  bloqueo.waitLock(10000);
+  try {
+    const hoja = hojaTemas_(ritual);
+    const ids = hoja.getRange(1, 1, hoja.getLastRow(), 1).getValues().map(([v]) => String(v));
+    temas.forEach((tema) => {
+      const fila = ids.indexOf(tema.id) + 1;
+      if (fila < 2) throw new Error(`No existe el tema ${tema.id} en el registro.`);
+      escribirFila_(hoja, fila, tema);
+    });
+    protegerHoja_(hoja);
+  } finally {
+    bloqueo.releaseLock();
+  }
+}
+
 // Reescribe la fila del tema con su ID. Conserva la columna Notas, que no es del dominio.
 function actualizarTema_(ritual, tema) {
   const bloqueo = LockService.getScriptLock();
@@ -65,11 +84,7 @@ function actualizarTema_(ritual, tema) {
     const ids = hoja.getRange(1, 1, hoja.getLastRow(), 1).getValues().map(([v]) => String(v));
     const fila = ids.indexOf(tema.id) + 1;
     if (fila < 2) throw new Error(`No existe el tema ${tema.id} en el registro.`);
-    // Las columnas sin campo (Notas) conservan lo que haya escrito a mano.
-    const rango = hoja.getRange(fila, 1, 1, COLUMNAS_REGISTRO.length);
-    const actual = rango.getValues()[0];
-    const nueva = temaAFila_(tema).map((valor, i) => (COLUMNAS_REGISTRO[i][0] ? valor : actual[i]));
-    rango.setValues([nueva]);
+    escribirFila_(hoja, fila, tema);
     protegerHoja_(hoja);
   } finally {
     bloqueo.releaseLock();
@@ -86,6 +101,13 @@ function protegerHoja_(hoja) {
     proteccion.getEditors().filter((u) => u.getEmail() !== Session.getEffectiveUser().getEmail())
   );
   if (proteccion.canDomainEdit()) proteccion.setDomainEdit(false);
+}
+
+// Las columnas sin campo (Notas) conservan lo que haya escrito a mano.
+function escribirFila_(hoja, fila, tema) {
+  const rango = hoja.getRange(fila, 1, 1, COLUMNAS_REGISTRO.length);
+  const actual = rango.getValues()[0];
+  rango.setValues([temaAFila_(tema).map((valor, i) => (COLUMNAS_REGISTRO[i][0] ? valor : actual[i]))]);
 }
 
 // Abre la hoja de temas. Si el registro está vacío, la nombra y escribe las cabeceras.
