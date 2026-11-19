@@ -39,7 +39,7 @@ Hazlo antes de que la cuenta actual se desactive. Si ya no tienes acceso a ella,
      ```bash
      gcloud iam service-accounts add-iam-policy-binding rituales-chat-app@ux-chapter-rituales.iam.gserviceaccount.com --member=user:NUEVA@civitatis.com --role=roles/iam.serviceAccountTokenCreator --project=ux-chapter-rituales
      ```
-2. **Configuración.** En `src/config.js`, cambia `organizador` en cada ritual si la persona organizadora también cambia.
+2. **Configuración.** En `src/config.js`, cambia `CUENTA_DUENA` por la cuenta nueva, y `organizador` en cada ritual si la persona organizadora también cambia.
 3. **Servicio del registro.** Con la cuenta nueva (`pnpm exec clasp login`), crea un despliegue nuevo:
    ```bash
    pnpm exec clasp create-deployment -d "produccion"
