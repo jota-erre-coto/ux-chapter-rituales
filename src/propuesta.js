@@ -73,7 +73,7 @@ function contextoPropuesta_(event) {
     return { error: 'Solo el organizador o el suplente pueden cambiar la propuesta.' };
   }
   const propuesta = leerPropuesta_(parametros.ritual, parametros.lunes);
-  if (!propuesta) return { error: 'No encuentro esta propuesta.' };
+  if (!propuesta) return { error: 'No se encuentra esta propuesta.' };
   if (propuesta.estado === 'confirmada') return { error: 'Esta propuesta ya está confirmada.' };
   const temas = leerTemas_(ritual);
   const seleccion = propuesta.ids.map((id) => temas.find((t) => t.id === id)).filter(Boolean);

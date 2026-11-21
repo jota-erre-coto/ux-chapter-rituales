@@ -88,7 +88,7 @@ function descartarTema(tema, actor, ritual) {
     return {
       ok: false,
       errores: {
-        actor: 'Un tema asignado no se puede rechazar. Si no puedes llevarlo, habla con quien te lo asignó.',
+        actor: 'Un tema asignado no se puede descartar. Si no puedes llevarlo, habla con quien te lo asignó.',
       },
     };
   }
@@ -107,7 +107,7 @@ function seleccionarTema(tema, actor, ritual) {
   const email = emailDe_(actor);
   const gestores = [ritual.organizador, ritual.suplente].map((e) => String(e || '').toLowerCase());
   if (!email || !gestores.includes(email)) {
-    return { ok: false, errores: { actor: 'Solo el organizador o el suplente seleccionan temas.' } };
+    return { ok: false, errores: { actor: 'Solo el organizador o el suplente pueden seleccionar temas.' } };
   }
   if (!estadosEditables_().includes(tema.estado)) {
     return { ok: false, errores: { estado: `El tema ${tema.id} está ${tema.estado} y no se puede seleccionar.` } };
@@ -125,12 +125,12 @@ function completarTema(tema, datos, actor) {
     return { ok: false, errores: { actor: 'Solo el responsable puede confirmar este tema.' } };
   }
   if (tema.estado !== ESTADOS.seleccionado) {
-    return { ok: false, errores: { estado: `El tema ${tema.id} está ${tema.estado}, no seleccionado.` } };
+    return { ok: false, errores: { estado: `El tema ${tema.id} no está seleccionado: ahora está ${tema.estado}.` } };
   }
   const contexto = limpiar_(datos.contexto);
   const enlace = limpiar_(datos.enlace);
   if (enlace && !/^https?:\/\/\S+$/.test(enlace)) {
-    return { ok: false, errores: { enlace: 'El enlace tiene que empezar por https://.' } };
+    return { ok: false, errores: { enlace: 'Escribe un enlace que empiece por https://' } };
   }
   const cambios = {};
   if (contexto) cambios.contexto = contexto;
@@ -149,7 +149,7 @@ function liberarTema(tema, actor, ritual) {
     return { ok: false, errores: { actor: 'No puedes devolver este tema al backlog.' } };
   }
   if (tema.estado !== ESTADOS.seleccionado) {
-    return { ok: false, errores: { estado: `El tema ${tema.id} está ${tema.estado}, no seleccionado.` } };
+    return { ok: false, errores: { estado: `El tema ${tema.id} no está seleccionado: ahora está ${tema.estado}.` } };
   }
   return { ok: true, tema: Object.assign({}, tema, { estado: ESTADOS.propuesto }) };
 }
@@ -160,10 +160,10 @@ function aplazarTema(tema, actor, ritual) {
   const email = emailDe_(actor);
   const gestores = [ritual.organizador, ritual.suplente].map((e) => String(e || '').toLowerCase());
   if (!email || !gestores.includes(email)) {
-    return { ok: false, errores: { actor: 'Solo el organizador o el suplente aplazan temas.' } };
+    return { ok: false, errores: { actor: 'Solo el organizador o el suplente pueden aplazar temas.' } };
   }
   if (tema.estado !== ESTADOS.seleccionado) {
-    return { ok: false, errores: { estado: `El tema ${tema.id} está ${tema.estado}, no seleccionado.` } };
+    return { ok: false, errores: { estado: `El tema ${tema.id} no está seleccionado: ahora está ${tema.estado}.` } };
   }
   return { ok: true, tema: Object.assign({}, tema, { estado: ESTADOS.propuesto, preferencia: true }) };
 }
@@ -199,16 +199,16 @@ function validarCampos_(datos) {
 
   if (!valores.titulo) errores.titulo = 'Escribe un título.';
   else if (valores.titulo.length > LONGITUD_MAX_TITULO)
-    errores.titulo = `El título no puede pasar de ${LONGITUD_MAX_TITULO} caracteres.`;
+    errores.titulo = `El título admite hasta ${LONGITUD_MAX_TITULO} caracteres.`;
   if (!TIPOS_FEEDBACK.includes(valores.tipo)) errores.tipo = 'Elige el tipo de feedback.';
   if (!DURACIONES_MIN.includes(valores.duracion))
     errores.duracion = 'Elige la duración: 15, 30 o 45 minutos.';
   if (!Number.isInteger(valores.urgencia) || valores.urgencia < 1 || valores.urgencia > 5)
-    errores.urgencia = 'La urgencia va de 1 a 5.';
+    errores.urgencia = 'Elige una urgencia del 1 al 5.';
   if (!Object.values(PREPARACIONES).includes(valores.preparacion))
     errores.preparacion = 'Elige la preparación.';
   if (valores.enlace && !/^https?:\/\/\S+$/.test(valores.enlace))
-    errores.enlace = 'El enlace tiene que empezar por https://.';
+    errores.enlace = 'Escribe un enlace que empiece por https://';
 
   return { valores, errores };
 }
