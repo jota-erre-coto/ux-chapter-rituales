@@ -9,7 +9,9 @@
 function anunciar_(ritual, { sesion, lunes }) {
   const claveRitual = claveDeRitual_(ritual);
   const propuesta = leerPropuesta_(claveRitual, lunes);
-  if (!propuesta || propuesta.estado !== 'confirmada' || propuesta.anuncio) return;
+  if (!propuesta || propuesta.estado !== 'confirmada') return;
+  // Un anuncio a medias (falló a mitad) se completa sin repetir lo ya publicado.
+  if (propuesta.anuncio && propuesta.anuncio.completo !== false) return;
   const facilita = destinatarioGestion(ritual, organizadorAusente_(ritual, { sinCache: true }));
   const confirmados = propuesta.confirmaciones ? temasConfirmados(propuesta) : [];
 
@@ -27,13 +29,21 @@ function anunciar_(ritual, { sesion, lunes }) {
 
   const temas = leerTemas_(ritual);
   const anunciados = confirmados.map((id) => temas.find((t) => t.id === id)).filter(Boolean);
-  const cabecera = publicarEnEspacio_(ritual.espacio, mensajeAnuncio(ritual, sesion, anunciados, facilita));
-  const hilos = {};
+  const guardarAnuncio = (anuncio) => modificarPropuesta_(claveRitual, lunes, (p) => Object.assign(p, { anuncio }));
+  let anuncio = propuesta.anuncio;
+  if (!anuncio) {
+    const cabecera = publicarEnEspacio_(ritual.espacio, mensajeAnuncio(ritual, sesion, anunciados, facilita));
+    anuncio = { mensaje: cabecera.name, hilos: {}, completo: false };
+    guardarAnuncio(anuncio);
+  }
+  const hilos = Object.assign({}, anuncio.hilos);
   anunciados.forEach((tema) => {
+    if (hilos[tema.id]) return;
     const publicado = publicarEnHilo_(ritual.espacio, `${lunes}-${tema.id}`, mensajeTemaAnunciado(tema));
     hilos[tema.id] = urlHilo_(publicado.thread.name);
+    guardarAnuncio({ mensaje: anuncio.mensaje, hilos, completo: false });
   });
-  modificarPropuesta_(claveRitual, lunes, (p) => Object.assign(p, { anuncio: { mensaje: cabecera.name, hilos } }));
+  guardarAnuncio({ mensaje: anuncio.mensaje, hilos });
   const anotado = llamarServicio_('anotarHilos', ritual, { hilos });
   if (!anotado.ok) console.error(`No se han podido anotar los hilos: ${JSON.stringify(anotado.errores)}`);
 }
@@ -53,7 +63,11 @@ function revisarCancelacion_(ritual, { lunes, sesiones, hoy }) {
   if (sesiones.includes(propuesta.sesion) || hoy > propuesta.sesion) return;
 
   const aplazados = llamarServicio_('aplazar', ritual, { ids: propuesta.ids });
-  if (!aplazados.ok) console.error(`No se han podido aplazar los temas: ${JSON.stringify(aplazados.errores)}`);
+  // Sin aplazar no se da por cancelada: el siguiente disparo lo vuelve a intentar.
+  if (!aplazados.ok) {
+    console.error(`No se han podido aplazar los temas: ${JSON.stringify(aplazados.errores)}`);
+    return;
+  }
   const anunciada = propuesta.anuncio && !propuesta.anuncio.cancelada;
   if (anunciada) {
     publicarEnEspacio_(ritual.espacio, mensajeCancelacion(ritual, propuesta.sesion, propuesta.ids.length > 0));

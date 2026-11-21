@@ -177,7 +177,12 @@ function llamarServicio_(accion, ritual, datos) {
   const email = Session.getEffectiveUser().getEmail().toLowerCase();
   if (email === CUENTA_DUENA) {
     const peticion = Object.assign({ accion, ritual: claveDeRitual_(ritual) }, datos);
-    return JSON.parse(JSON.stringify(ejecutarOperacion_(email, peticion)));
+    try {
+      return JSON.parse(JSON.stringify(ejecutarOperacion_(email, peticion)));
+    } catch (error) {
+      console.error(`Error en el servicio del registro: ${error.stack}`);
+      return fallo_('servicio', 'Ha fallado el registro de temas. Inténtalo de nuevo en un momento.');
+    }
   }
   const respuesta = UrlFetchApp.fetch(URL_SERVICIO_REGISTRO, {
     method: 'post',
