@@ -84,7 +84,14 @@ const OPERACIONES_SERVICIO_ = {
     if (!completado.ok) return completado;
     const error = responderRonda_(ritual, lunes, id, CONFIRMACION.confirmado);
     if (error) return fallo_('id', error);
-    if (contexto || enlace) actualizarTema_(ritual, completado.tema);
+    if (contexto || enlace) {
+      try {
+        actualizarTema_(ritual, completado.tema);
+      } catch (e) {
+        deshacerRespuesta_(ritual, lunes, id);
+        throw e;
+      }
+    }
     cerrarPeticion_(ritual, lunes, completado.tema, CONFIRMACION.confirmado);
     return { ok: true, tema: completado.tema };
   },
@@ -93,12 +100,17 @@ const OPERACIONES_SERVICIO_ = {
   noPuedo(ritual, actor, { lunes, id }) {
     const tema = buscarTema_(ritual, id);
     if (!tema) return fallo_('id', `No encuentro el tema ${id} en el registro.`);
+    if (tema.responsable !== actor.email) return fallo_('actor', 'Solo su responsable puede responder por este tema.');
     const liberado = liberarTema(tema, actor, ritual);
     if (!liberado.ok) return liberado;
-    if (tema.responsable !== actor.email) return fallo_('actor', 'Solo su responsable puede responder por este tema.');
     const error = responderRonda_(ritual, lunes, id, CONFIRMACION.noPuede);
     if (error) return fallo_('id', error);
-    actualizarTema_(ritual, liberado.tema);
+    try {
+      actualizarTema_(ritual, liberado.tema);
+    } catch (e) {
+      deshacerRespuesta_(ritual, lunes, id);
+      throw e;
+    }
     ofrecerSustituto_(ritual, claveDeRitual_(ritual), lunes, id);
     return { ok: true, tema: liberado.tema };
   },

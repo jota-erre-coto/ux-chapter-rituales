@@ -3,7 +3,7 @@
 //
 // Todo vive en el estado de la propuesta de la semana (ver propuesta.js), ampliado con:
 // { confirmaciones, liberados, peticiones: { [id]: mensaje }, ofertas: { [id]: mensaje },
-//   preguntadoSinTemas, sinTemas: 'cancelar' | 'abierta' }.
+//   ofertados: { [idQueSale]: idQueEntra }, preguntadoSinTemas, sinTemas: 'cancelar' | 'abierta' }.
 // Las escrituras en el registro van por el servicio; el estado se guarda con bloqueo,
 // fuera de cualquier llamada al servicio, que usa el mismo bloqueo del script.
 
@@ -29,6 +29,8 @@ function lanzarConfirmaciones_(ritual, contexto) {
     revisarConfirmacionPropuesta_(ritual, contexto);
     return;
   }
+  // Ya lanzada (p. ej. al relanzar el hito a mano): no se reinician las respuestas.
+  if (actual.confirmaciones) return;
   const temas = leerTemas_(ritual);
   const propuesta = iniciarConfirmaciones(actual);
   propuesta.peticiones = {};
@@ -57,6 +59,8 @@ function revisarPlazo_(ritual, { lunes }) {
 // Envía al organizador (o al suplente) la oferta de sustituto para un tema.
 function ofrecerSustituto_(ritual, claveRitual, lunes, saleId) {
   const propuesta = leerPropuesta_(claveRitual, lunes);
+  // Un tema solo tiene una oferta abierta a la vez.
+  if ((propuesta.ofertas || {})[saleId]) return;
   const temas = leerTemas_(ritual);
   const sale = temas.find((t) => t.id === saleId);
   if (!sale) return;
@@ -71,6 +75,7 @@ function ofrecerSustituto_(ritual, claveRitual, lunes, saleId) {
   if (!enviado) throw new Error(`No se ha podido ofrecer sustituto a ${destinatario}.`);
   modificarPropuesta_(claveRitual, lunes, (p) => {
     p.ofertas = Object.assign({}, p.ofertas, { [saleId]: enviado.name });
+    p.ofertados = Object.assign({}, p.ofertados, { [saleId]: entra ? entra.id : null });
     return p;
   });
 }
@@ -83,7 +88,8 @@ function preguntarSiSinTemas_(ritual, claveRitual, lunes) {
   const ofertasAbiertas = propuesta.ids.some((id) => (propuesta.ofertas || {})[id]);
   if (!sesionSinTemas(propuesta) || ofertasAbiertas) return;
   const destinatario = destinatarioGestion(ritual, organizadorAusente_(ritual, { sinCache: true }));
-  enviarPrivadoPorEmail_(ritual, destinatario, mensajeSinTemas(ritual, propuesta));
+  const enviado = enviarPrivadoPorEmail_(ritual, destinatario, mensajeSinTemas(ritual, propuesta));
+  if (!enviado) throw new Error(`No se ha podido preguntar a ${destinatario} qué hacer sin temas.`);
   modificarPropuesta_(claveRitual, lunes, (p) => Object.assign(p, { preguntadoSinTemas: true }));
 }
 
@@ -104,6 +110,25 @@ function responderRonda_(ritual, lunes, id, respuesta) {
     return r.propuesta;
   });
   return guardada ? null : error;
+}
+
+// Deshace una respuesta registrada cuando falla la escritura que la acompaña, para que
+// el responsable pueda volver a responder.
+function deshacerRespuesta_(ritual, lunes, id) {
+  modificarPropuesta_(claveDeRitual_(ritual), lunes, (p) => {
+    if (!p || !p.confirmaciones || !p.confirmaciones[id]) return null;
+    p.confirmaciones = Object.assign({}, p.confirmaciones, { [id]: CONFIRMACION.pendiente });
+    return p;
+  });
+}
+
+// Quita la oferta resuelta de un tema que sale.
+function cerrarOferta_(propuesta, anterior, saleId) {
+  propuesta.ofertas = Object.assign({}, anterior.ofertas);
+  propuesta.ofertados = Object.assign({}, anterior.ofertados);
+  delete propuesta.ofertas[saleId];
+  delete propuesta.ofertados[saleId];
+  return propuesta;
 }
 
 // Deja la petición de confirmación respondida y sin botones.
@@ -216,13 +241,12 @@ function aplicarSustitucion(event) {
   const seleccion = llamarServicio_('seleccionar', c.ritual, { ids: [entraId] });
   if (!seleccion.ok) return mensaje_(`No se ha podido sustituir: ${Object.values(seleccion.errores).join(' ')}`);
   if (sale && sale.estado === ESTADOS.seleccionado) llamarServicio_('liberar', c.ritual, { ids: [saleId] });
-  modificarPropuesta_(c.claveRitual, c.lunes, (p) => {
+  const guardada = modificarPropuesta_(c.claveRitual, c.lunes, (p) => {
     const s = sustituirTema(p, saleId, entraId);
-    if (!s.ok) return null;
-    s.propuesta.ofertas = Object.assign({}, p.ofertas);
-    delete s.propuesta.ofertas[saleId];
-    return s.propuesta;
+    return s.ok ? cerrarOferta_(s.propuesta, p, saleId) : null;
   });
+  // Otro clic ya la resolvió: no se avisa dos veces.
+  if (!guardada) return mensaje_('Esta sustitución ya está resuelta.');
   if (entra) enviarPrivadoPorEmail_(c.ritual, entra.responsable, mensajeAvisoSustituto(c.ritual, c.propuesta, entra));
   return actualizarEsteMensaje_(mensajeSustitucionResuelta(sale || { id: saleId, titulo: '' }, entra));
 }
@@ -236,13 +260,11 @@ function rechazarSustitucion(event) {
   const r = retirarTema(c.propuesta, saleId);
   if (!r.ok) return mensaje_(Object.values(r.errores).join(' '));
   if (sale && sale.estado === ESTADOS.seleccionado) llamarServicio_('liberar', c.ritual, { ids: [saleId] });
-  modificarPropuesta_(c.claveRitual, c.lunes, (p) => {
+  const guardada = modificarPropuesta_(c.claveRitual, c.lunes, (p) => {
     const s = retirarTema(p, saleId);
-    if (!s.ok) return null;
-    s.propuesta.ofertas = Object.assign({}, p.ofertas);
-    delete s.propuesta.ofertas[saleId];
-    return s.propuesta;
+    return s.ok ? cerrarOferta_(s.propuesta, p, saleId) : null;
   });
+  if (!guardada) return mensaje_('Esta sustitución ya está resuelta.');
   preguntarSiSinTemas_(c.ritual, c.claveRitual, c.lunes);
   return actualizarEsteMensaje_(mensajeSustitucionResuelta(sale || { id: saleId, titulo: '' }, null));
 }
