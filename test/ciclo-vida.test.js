@@ -180,3 +180,23 @@ test('seleccionan el organizador o el suplente, y solo temas del backlog prepara
   assert.ok(seleccionarTema(temaDe({ preparacion: 'Falta preparación' }), jcoto, ritual).errores.preparacion);
   assert.ok(seleccionarTema(temaDe({ preparacion: 'Lista', estado: 'resuelto' }), jcoto, ritual).errores.estado);
 });
+
+test('al confirmar, el responsable completa contexto y enlace de su tema seleccionado', () => {
+  const completar = simbolo('completarTema');
+  const seleccionado = temaDe({ estado: 'seleccionado', contexto: 'previo' });
+  const r = completar(seleccionado, { contexto: '', enlace: 'https://figma.com/x' }, actor);
+  assert.equal(r.tema.contexto, 'previo');
+  assert.equal(r.tema.enlace, 'https://figma.com/x');
+  assert.ok(completar(seleccionado, { enlace: 'figma' }, actor).errores.enlace);
+  assert.ok(completar(seleccionado, {}, jcoto).errores.actor);
+  assert.ok(completar(temaDe({}), {}, actor).errores.estado);
+});
+
+test('un tema seleccionado vuelve al backlog por su responsable, el organizador o el suplente', () => {
+  const liberar = simbolo('liberarTema');
+  const seleccionado = temaDe({ estado: 'seleccionado' });
+  assert.equal(liberar(seleccionado, actor, ritual).tema.estado, 'propuesto');
+  assert.equal(liberar(seleccionado, jcoto, ritual).ok, true);
+  assert.ok(liberar(seleccionado, { email: 'atoca@civitatis.com' }, ritual).errores.actor);
+  assert.ok(liberar(temaDe({}), actor, ritual).errores.estado);
+});
