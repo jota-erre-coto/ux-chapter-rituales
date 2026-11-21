@@ -50,14 +50,16 @@ function sesionSinTemas(propuesta) {
 }
 
 // Siguiente sustituto para el tema que sale: candidato con preparación Lista, fuera de
-// la propuesta y de los ya liberados esta semana, que quepa en la sesión sin el que sale.
+// la propuesta, de los ya liberados esta semana y de los ofrecidos en otra oferta, que quepa en la sesión sin el que sale.
 // temas: registro completo; devuelve el tema o null.
 function elegirSustituto(temas, propuesta, saleId, hoy, duracionSesionMin) {
   const porId = Object.fromEntries(temas.map((t) => [t.id, t]));
   const ocupado = propuesta.ids
     .filter((id) => id !== saleId && propuesta.confirmaciones[id] !== CONFIRMACION.noPuede)
     .reduce((suma, id) => suma + ((porId[id] && porId[id].duracion) || 0), 0);
-  const fuera = propuesta.ids.concat(propuesta.liberados || []);
+  // Fuera también los ya ofrecidos en otra oferta abierta, para no ofrecer el mismo dos veces.
+  const ofrecidos = Object.values(propuesta.ofertados || {}).filter(Boolean);
+  const fuera = propuesta.ids.concat(propuesta.liberados || [], ofrecidos);
   return (
     ordenarPorPrioridad(candidatos(temas), hoy).find(
       (t) =>

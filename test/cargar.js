@@ -5,7 +5,12 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 function cargar(...archivos) {
-  const contexto = vm.createContext({});
+  return cargarEn(vm.createContext({}), ...archivos);
+}
+
+// Igual que cargar, pero sobre un contexto propio: permite sustituir después funciones
+// de Apps Script (o de otros archivos) asignándolas en el contexto.
+function cargarEn(contexto, ...archivos) {
   for (const archivo of archivos) {
     const ruta = path.join(__dirname, '..', 'src', archivo);
     vm.runInContext(fs.readFileSync(ruta, 'utf8'), contexto, { filename: ruta });
@@ -13,4 +18,4 @@ function cargar(...archivos) {
   return (nombre) => vm.runInContext(nombre, contexto);
 }
 
-module.exports = { cargar };
+module.exports = { cargar, cargarEn };
