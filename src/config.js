@@ -39,6 +39,10 @@ const RITUAL_POR_DEFECTO = 'pruebas';
 const ID_IMPLEMENTACION = 'AKfycbzn9THSvpW3ezSdVXGcSyltIHalAJ5Zc7QqVJEoeKfZxGt_lShKgHlaAX84Q6xYh8jj';
 const URL_SERVICIO_REGISTRO = `https://script.google.com/a/macros/civitatis.com/s/${ID_IMPLEMENTACION}/exec`;
 
+// Cuenta dueña: la que despliega el servicio del registro e instala el disparador
+// (ver README). Si cambia, se cambia aquí también.
+const CUENTA_DUENA = 'jcoto@civitatis.com';
+
 // Cuenta de servicio que pone la voz de la app en los mensajes que envía por iniciativa propia.
 const CUENTA_SERVICIO_APP = 'rituales-chat-app@ux-chapter-rituales.iam.gserviceaccount.com';
 

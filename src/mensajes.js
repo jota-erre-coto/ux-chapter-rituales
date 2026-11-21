@@ -647,3 +647,75 @@ function mensajeSinTemasDecidido(decision) {
     cardsV2: [],
   };
 }
+
+// Qué preparar antes de la sesión según el tipo de feedback.
+const ANTES_DE_LA_SESION = {
+  'Decidir entre opciones': 'Revisa las opciones y llega con una preferencia razonada.',
+  'Validar una propuesta': 'Revisa la propuesta y apunta lo que te haga dudar.',
+  'Abrir un debate': 'Piensa tu postura y trae algún ejemplo que la apoye.',
+  Informar: 'Basta con echar un vistazo al enlace; no hace falta preparar nada.',
+};
+
+function antesDeLaSesion(tipo) {
+  return ANTES_DE_LA_SESION[tipo] || 'Echa un vistazo al contexto y al enlace antes de la sesión.';
+}
+
+// Cabecera del anuncio del martes. facilita: email de quien facilita la sesión.
+function mensajeAnuncio(ritual, sesion, temas, facilita) {
+  const minutos = temas.reduce((suma, t) => suma + t.duracion, 0);
+  const lista = temas.map((t) => `• ${t.id} «${t.titulo}» · ${t.responsable} · ${t.duracion} min`).join('\n');
+  return {
+    text:
+      `${ritual.nombre} del ${fechaLarga(sesion)}. Facilita ${facilita}.\n` +
+      `Temas (${minutos} min):\n${lista}\n` +
+      'Cada tema tiene su hilo justo debajo: deja ahí tus dudas antes de la sesión.',
+    cardsV2: tarjeta_('anuncio', [botones_([botonActa_(ritual)])]),
+  };
+}
+
+// Mensaje de un tema en su propio hilo.
+function mensajeTemaAnunciado(tema) {
+  const widgets = [
+    {
+      decoratedText: {
+        topLabel: `${tema.id} · ${tema.duracion} min · ${tema.tipo}`,
+        text: tema.titulo,
+        bottomLabel: `Responsable: ${tema.responsable}`,
+        wrapText: true,
+      },
+    },
+  ];
+  if (tema.contexto) widgets.push({ textParagraph: { text: `<b>Contexto</b><br>${tema.contexto}` } });
+  widgets.push({ textParagraph: { text: `<b>Antes de la sesión</b><br>${antesDeLaSesion(tema.tipo)}` } });
+  if (tema.enlace) widgets.push(botones_([{ text: 'Abrir enlace', onClick: { openLink: { url: tema.enlace } } }]));
+  return { text: `${tema.id} · ${tema.titulo}`, cardsV2: tarjeta_(`tema-${tema.id}`, widgets) };
+}
+
+// Sesión sin temas preparados, por decisión del organizador.
+function mensajeSesionAbierta(ritual, sesion, facilita) {
+  return {
+    text:
+      `${ritual.nombre} del ${fechaLarga(sesion)}: sesión abierta, sin temas preparados. Facilita ${facilita}.\n` +
+      'Trae lo que tengas entre manos y lo vemos en el momento.',
+    cardsV2: tarjeta_('anuncio-abierta', [botones_([botonActa_(ritual)])]),
+  };
+}
+
+// Cancelación de la sesión. conTemas: si había temas seleccionados, pasan con
+// preferencia a la siguiente.
+function mensajeCancelacion(ritual, sesion, conTemas) {
+  return {
+    text:
+      `Se cancela la ${ritual.nombre} del ${fechaLarga(sesion)}.` +
+      (conTemas ? ' Los temas seleccionados pasan con preferencia a la próxima sesión.' : ''),
+  };
+}
+
+// Aviso al organizador cuando la sesión desaparece del calendario antes del anuncio.
+function mensajeTemasAplazados(ritual, sesion, ids) {
+  return {
+    text:
+      `La ${ritual.nombre} del ${fechaLarga(sesion)} ya no está en el calendario. ` +
+      `Los temas seleccionados (${ids.join(', ')}) vuelven al backlog con preferencia para la próxima sesión.`,
+  };
+}

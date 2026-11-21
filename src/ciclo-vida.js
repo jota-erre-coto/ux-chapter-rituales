@@ -154,6 +154,20 @@ function liberarTema(tema, actor, ritual) {
   return { ok: true, tema: Object.assign({}, tema, { estado: ESTADOS.propuesto }) };
 }
 
+// Aplaza un tema seleccionado cuya sesión se cancela: vuelve al backlog con
+// preferencia para la siguiente. Lo hacen el organizador o el suplente.
+function aplazarTema(tema, actor, ritual) {
+  const email = emailDe_(actor);
+  const gestores = [ritual.organizador, ritual.suplente].map((e) => String(e || '').toLowerCase());
+  if (!email || !gestores.includes(email)) {
+    return { ok: false, errores: { actor: 'Solo el organizador o el suplente aplazan temas.' } };
+  }
+  if (tema.estado !== ESTADOS.seleccionado) {
+    return { ok: false, errores: { estado: `El tema ${tema.id} está ${tema.estado}, no seleccionado.` } };
+  }
+  return { ok: true, tema: Object.assign({}, tema, { estado: ESTADOS.propuesto, preferencia: true }) };
+}
+
 // Asigna temas el organizador, y el suplente solo mientras el organizador está ausente.
 function puedeAsignar(actor, ritual, organizadorAusente) {
   const email = emailDe_(actor);

@@ -90,6 +90,15 @@ function publicarEnEspacio_(espacio, mensaje) {
   return pedir_(`${CHAT_API}/${espacio}/messages`, tokenApp_(), mensaje);
 }
 
+// Publica un mensaje de la app en su propio hilo. La clave identifica el hilo: con la
+// misma clave, el mensaje se añade a ese hilo en vez de abrir otro.
+function publicarEnHilo_(espacio, claveHilo, mensaje) {
+  const url =
+    `${CHAT_API}/${espacio}/messages?threadKey=${encodeURIComponent(claveHilo)}` +
+    '&messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD';
+  return pedir_(url, tokenApp_(), mensaje);
+}
+
 // Token de la cuenta de servicio con el permiso de app de Chat, cacheado por usuario.
 function tokenApp_() {
   const cache = CacheService.getUserCache();
