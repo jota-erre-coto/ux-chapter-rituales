@@ -157,6 +157,20 @@ const OPERACIONES_SERVICIO_ = {
     return { ok: true, ausente: organizadorAusente_(ritual, { directo: true, sinCache: true }) };
   },
 
+  // Lanza a mano un hito del ritual de pruebas (/hito). Se ejecuta con la cuenta dueña
+  // porque los hitos leen su calendario.
+  hito(ritual, actor, { hito }) {
+    if (!ritual.disparoManual || ![ritual.organizador, ritual.suplente].includes(actor.email)) {
+      return fallo_('actor', 'No puedes lanzar hitos en este espacio.');
+    }
+    try {
+      return { ok: true, hito: lanzarHito_(ritual, hito) };
+    } catch (error) {
+      console.error(`Error al lanzar el hito ${hito}: ${error.stack}`);
+      return fallo_('hito', `No se ha podido lanzar el hito ${hito}. Inténtalo de nuevo en un momento.`);
+    }
+  },
+
   descartar(ritual, actor, { id }) {
     const tema = buscarTema_(ritual, id);
     if (!tema) return fallo_('id', `No se encuentra el tema ${id} en el registro.`);

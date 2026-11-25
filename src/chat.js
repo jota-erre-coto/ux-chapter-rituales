@@ -50,14 +50,12 @@ function lanzarHitoManual(event) {
   if (!ritual || !ritual.disparoManual || ![ritual.organizador, ritual.suplente].includes(actor.email)) {
     return cerrarConMensaje_('No puedes lanzar hitos en este espacio.', event);
   }
+  // Va por el servicio: los hitos leen el calendario del organizador, que el suplente
+  // no puede leer con su cuenta.
   const hito = (event.commonEventObject.parameters || {}).hito;
-  try {
-    const lanzado = lanzarHito_(ritual, hito);
-    return cerrarConMensaje_(`Hito ${lanzado} lanzado.`, event);
-  } catch (error) {
-    console.error(`Error al lanzar el hito ${hito}: ${error.stack}`);
-    return cerrarConMensaje_(`No se ha podido lanzar el hito ${hito}. Inténtalo de nuevo en un momento.`, event);
-  }
+  const resultado = llamarServicio_('hito', ritual, { hito });
+  if (!resultado.ok) return cerrarConMensaje_(Object.values(resultado.errores).join(' '), event);
+  return cerrarConMensaje_(`Hito ${resultado.hito} lanzado.`, event);
 }
 
 // Botón «Proponer tema» del diálogo de alta.
