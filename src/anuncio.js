@@ -75,7 +75,12 @@ function revisarCancelacion_(ritual, { lunes, sesiones, hoy }) {
     publicarEnEspacio_(ritual.espacio, mensajeCancelacion(ritual, propuesta.sesion, propuesta.ids.length > 0));
   } else if (propuesta.ids.length) {
     const destinatario = destinatarioGestion(ritual, organizadorAusente_(ritual, { sinCache: true }));
-    enviarPrivadoPorEmail_(ritual, destinatario, mensajeTemasAplazados(ritual, propuesta.sesion, propuesta.ids));
+    const temas = leerTemas_(ritual);
+    const temasAplazados = propuesta.ids.map((id) => temas.find((t) => t.id === id) || { id });
+    const porAusencia = textoPorAusencia(ritual, destinatario, nombresDelEspacio_(ritual));
+    enviarPrivadoPorEmail_(ritual, destinatario, {
+      text: porAusencia + mensajeTemasAplazados(ritual, propuesta.sesion, temasAplazados).text,
+    });
   }
   modificarPropuesta_(claveRitual, lunes, (p) => Object.assign(p, { cancelada: true }));
 }

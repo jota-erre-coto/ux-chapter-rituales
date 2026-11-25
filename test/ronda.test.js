@@ -40,6 +40,7 @@ function montar({ temas, propuesta, envioFalla = () => false, actualizarFalla = 
     organizadorAusente_: () => false,
     nombresDelEspacio_: () => ({}),
     conNombres: (temas) => temas,
+    textoPorAusencia: () => "",
     destinatarioGestion: (r, aus) => (aus ? r.suplente : r.organizador),
     revisarConfirmacionPropuesta_: () => {},
     actualizarMensaje_: () => {},

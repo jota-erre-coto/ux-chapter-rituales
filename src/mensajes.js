@@ -48,7 +48,6 @@ function dialogoAltaTema(valores, errores, edicion, asignables, quienPropone) {
     },
     ...campoResponsable_(asignables, valores.responsable || quienPropone, quienPropone),
     { divider: {} },
-    { textParagraph: { text: '<b>Opcional.</b> Puedes completarlo ahora o cuando confirmes el tema.' } },
     desplegable_(
       'urgencia',
       'Urgencia (1 = puede esperar, 5 = lo necesito ya)',
@@ -59,8 +58,16 @@ function dialogoAltaTema(valores, errores, edicion, asignables, quienPropone) {
       'preparacion',
       'Preparación',
       Object.values(PREPARACIONES),
-      valores.preparacion || PREPARACIONES.falta
+      valores.preparacion || PREPARACIONES.laTendre
     ),
+    {
+      textParagraph: {
+        text:
+          'La urgencia sube un punto cada 3 semanas que el tema espera. ' +
+          'Un tema con «Falta preparación» no entra en la propuesta del lunes: cámbialo en /mis-temas cuando esté listo.',
+      },
+    },
+    { textParagraph: { text: '<b>Opcional.</b> Puedes añadir el contexto y el enlace ahora o al confirmar tu tema.' } },
     {
       textInput: {
         name: 'contexto',
@@ -97,8 +104,11 @@ function dialogoAviso(texto) {
 // Texto que recibe quien propone, solo visible para esa persona.
 function textoTemaGuardado(tema) {
   return (
-    `Tema ${tema.id} guardado en el backlog: «${tema.titulo}».\n` +
-    `${tema.tipo} · ${tema.duracion} min · urgencia ${tema.urgencia} · ${tema.preparacion}.`
+    `Tema guardado en el backlog: «${tema.titulo}» (${tema.id}).\n` +
+    `${tema.tipo} · ${tema.duracion} min · urgencia ${tema.urgencia} · ${preparacionEnTercera_(tema.preparacion)}.\n` +
+    'Cada lunes a las 13:00 se eligen los temas de la sesión de esa semana. Si entra el tuyo, ' +
+    'te pediremos el martes a las 11:00 que confirmes que lo llevas. Ese aviso te llega por el chat ' +
+    'con Rituales del Chapter UX: si aún no lo has abierto, ábrelo.'
   );
 }
 
@@ -109,14 +119,14 @@ function dialogoMisTemas(propios, otros, hoy, permisos) {
   const sections = [];
   if (!propios.length) {
     sections.push({
-      widgets: [{ textParagraph: { text: 'No tienes temas. Usa /tema para proponer uno.' } }],
+      widgets: [{ textParagraph: { text: 'No tienes temas propios. Usa /tema para proponer uno.' } }],
     });
   }
   propios.forEach((tema) => sections.push(seccionTema_(tema, hoy, permisos(tema))));
   if (otros.length) {
     sections.push({
-      header: 'Resto del backlog',
-      widgets: [{ textParagraph: { text: 'Como organizador o suplente, puedes descartar estos temas.' } }],
+      header: 'Temas del resto del Chapter',
+      widgets: [{ textParagraph: { text: 'Puedes descartarlos si dejan de tener sentido.' } }],
     });
     otros.forEach((tema) => sections.push(seccionTema_(tema, hoy, permisos(tema), true)));
   }
@@ -125,13 +135,13 @@ function dialogoMisTemas(propios, otros, hoy, permisos) {
 
 function dialogoConfirmarDescarte(tema) {
   return {
-    header: { title: `Descartar ${tema.id}` },
+    header: { title: 'Descartar tema' },
     sections: [
       {
         widgets: [
           {
             textParagraph: {
-              text: `¿Descartas «${tema.titulo}»? Saldrá del backlog y no se tratará en ninguna sesión.`,
+              text: `¿Descartas «${tema.titulo}» (${tema.id})? Saldrá del backlog y no se tratará en ninguna sesión. Si cambias de idea, tendrás que proponerlo de nuevo.`,
             },
           },
           {
@@ -154,9 +164,10 @@ function dialogoConfirmarDescarte(tema) {
 // Aviso privado al responsable de un tema asignado.
 function textoAvisoAsignacion(tema, quienAsigna) {
   return (
-    `${quienAsigna} te ha asignado el tema ${tema.id} para la Design Review: «${tema.titulo}».\n` +
-    'Es un compromiso: cuando se seleccione para una sesión, te pediremos que confirmes que lo llevas. ' +
-    'Puedes verlo y editarlo con /mis-temas.'
+    `${quienAsigna} te ha asignado el tema «${tema.titulo}» (${tema.id}) para la Design Review. ` +
+    'Eres su responsable: lo preparas y lo presentas.\n' +
+    'Cuando entre en una sesión, te pediremos que confirmes que lo llevas o que avises de que no puedes.\n' +
+    'Revisa sus datos y edítalos con /mis-temas.'
   );
 }
 
@@ -179,13 +190,33 @@ function proponenteDe_(tema) {
   return tema.proponenteNombre || tema.proponente;
 }
 
+// Primera línea de los mensajes de gestión que le llegan al suplente: por qué le llegan.
+// Vacía si le llegan al organizador.
+function textoPorAusencia(ritual, destinatario, nombres) {
+  if (destinatario === ritual.organizador) return '';
+  const quien = (nombres || {})[ritual.organizador] || ritual.organizador;
+  return `Te llega a ti porque ${quien} está fuera de la oficina.\n`;
+}
+
+// Preparación en tercera persona, para tarjetas que hablan de otra persona: «Lista»
+// suelto se confunde y «La tendré» está en primera persona.
+function preparacionEnTercera_(preparacion) {
+  const textos = {
+    [PREPARACIONES.lista]: 'preparación lista',
+    [PREPARACIONES.laTendre]: 'la tendrá para la sesión',
+    [PREPARACIONES.falta]: 'falta preparación',
+  };
+  return textos[preparacion] || preparacion;
+}
+
 // Respuesta a quien asigna, según se haya podido avisar o no al responsable.
 function textoTemaAsignado(tema, avisado) {
   const quien = responsableDe_(tema);
   const aviso = avisado
     ? `Se ha avisado a ${quien} por mensaje privado.`
-    : `No se ha podido avisar a ${quien}: todavía no ha abierto un chat con la app. Avísale tú.`;
-  return `Tema ${tema.id} asignado a ${quien}: «${tema.titulo}».\n${aviso}`;
+    : `No se ha podido avisar a ${quien}: todavía no ha abierto un chat con la app. Díselo tú. ` +
+      'Mientras no lo abra, no recibirá la petición de confirmación del martes.';
+  return `Tema «${tema.titulo}» (${tema.id}) asignado a ${quien}.\n${aviso}`;
 }
 
 function textoTemaEditado(tema) {
@@ -201,7 +232,7 @@ function seccionTema_(tema, hoy, permisos, mostrarResponsable) {
     tema.tipo,
     `${tema.duracion} min`,
     `urgencia ${urgenciaEfectiva(tema, hoy)}`,
-    tema.preparacion,
+    preparacionEnTercera_(tema.preparacion),
   ];
   if (mostrarResponsable) detalle.unshift(responsableDe_(tema));
   if (tema.asignado) detalle.push(`asignado por ${proponenteDe_(tema)}`);
@@ -218,7 +249,7 @@ function seccionTema_(tema, hoy, permisos, mostrarResponsable) {
     {
       decoratedText: {
         topLabel: tema.fechaAlta
-          ? `${tema.id} · ${fechaCorta(tema.fechaAlta)} · ${tema.estado}`
+          ? `${tema.id} · creado el ${fechaCorta(tema.fechaAlta)} · ${tema.estado}`
           : `${tema.id} · ${tema.estado}`,
         text: tema.titulo,
         bottomLabel: detalle.join(' · '),
@@ -286,8 +317,8 @@ function mensajeConvocatoria(ritual, sesion) {
   return {
     text:
       `Convocatoria de temas para la ${ritual.nombre} del ${fechaLarga(sesion)}.\n` +
-      `Si tienes algo que llevar, propónlo antes de las ${cierre} de hoy. ` +
-      'Lo que llegue después entrará en la selección de la semana siguiente.',
+      `Si quieres traer un tema, propónlo antes de las ${cierre} de hoy y lo tendremos en cuenta para esta sesión. ` +
+      'Si llega más tarde, se valorará para la siguiente.',
     cardsV2: [
       {
         cardId: 'convocatoria',
@@ -383,9 +414,13 @@ function mensajePropuesta(ritual, propuesta, seleccion, sustitutos, hoy) {
     { key: 'lunes', value: propuesta.lunes },
   ];
 
+  const porAusencia =
+    propuesta.enSustitucion && !confirmada
+      ? `Te llega a ti porque ${propuesta.organizadorNombre || ritual.organizador} está fuera de la oficina.\n`
+      : '';
   const cabecera = confirmada
-    ? `Propuesta confirmada${propuesta.confirmadaPor ? ` por ${propuesta.confirmadaPor}` : ''} para la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}.`
-    : `Propuesta de temas para la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}.`;
+    ? `Propuesta confirmada para la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}.`
+    : `${porAusencia}Propuesta de temas para la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}.`;
 
   const sections = [];
   if (!seleccion.length) {
@@ -393,14 +428,14 @@ function mensajePropuesta(ritual, propuesta, seleccion, sustitutos, hoy) {
       widgets: [
         {
           textParagraph: {
-            text: 'No hay ningún tema preparado en el backlog. Si no añades uno, esta semana no habrá temas que anunciar.',
+            text: `No hay ningún tema del backlog que se pueda proponer: los que tienen «Falta preparación» no entran. Si alguno se prepara a tiempo, añádelo antes del ${diaDeHito_(plazo)} a las ${plazo.hora} o esta semana no habrá temas que anunciar.`,
           },
         },
       ],
     });
   }
   seleccion.forEach((t) => {
-    const detalle = [`responsable: ${responsableDe_(t)}`, `urgencia ${urgenciaEfectiva(t, hoy)}`, t.preparacion];
+    const detalle = [`responsable: ${responsableDe_(t)}`, `urgencia ${urgenciaEfectiva(t, hoy)}`, preparacionEnTercera_(t.preparacion)];
     if (t.preferencia) detalle.push('aplazado de la sesión anterior');
     sections.push({
       widgets: [
@@ -416,15 +451,18 @@ function mensajePropuesta(ritual, propuesta, seleccion, sustitutos, hoy) {
     });
   });
 
-  const pie = [`${minutos} de ${ritual.duracionSesionMin} minutos.`];
-  if (propuesta.enSustitucion && !confirmada) {
-    pie.unshift(`Te llega a ti porque ${propuesta.organizadorNombre || ritual.organizador} está fuera de la oficina.`);
+  const pie = [`Ocupan ${minutos} de los ${ritual.duracionSesionMin} minutos de la sesión.`];
+  if (sustitutos.length && !confirmada) {
+    pie.push(`Sustitutos si alguien no confirma: ${sustitutos.map((t) => `«${t.titulo}» (${t.id})`).join(', ')}.`);
   }
-  if (sustitutos.length) pie.push(`Sustitutos si alguien no confirma: ${sustitutos.map((t) => t.id).join(', ')}.`);
-  // Si el plazo ya ha pasado (una propuesta lanzada a mano), no se menciona.
-  if (!confirmada && hoy <= fechaDeHito_(propuesta.lunes, plazo)) {
+  const cuandoPlazo = `el ${diaDeHito_(plazo)} a las ${plazo.hora}`;
+  if (confirmada) {
+    pie.push(`${cuandoPlazo[0].toUpperCase()}${cuandoPlazo.slice(1)} pediremos a cada responsable que confirme su tema.`);
+  } else if (seleccion.length && hoy <= fechaDeHito_(propuesta.lunes, plazo)) {
+    // Si el plazo ya ha pasado (una propuesta lanzada a mano), no se menciona.
     pie.push(
-      `Si no la confirmas antes del ${diaDeHito_(plazo)} a las ${plazo.hora}, no se pedirá confirmación a nadie ni se anunciará nada.`
+      `Confírmala antes del ${diaDeHito_(plazo)} a las ${plazo.hora}. Entonces pediremos a cada responsable que confirme su tema. ` +
+        'Si no la confirmas, esta semana no se anunciará ningún tema.'
     );
   }
   const widgetsPie = [{ textParagraph: { text: pie.join('<br>') } }];
@@ -463,9 +501,9 @@ function dialogoCambiarTema(seleccion, fuera, parametros, errores) {
     {
       selectionInput: {
         name: 'sale',
-        label: 'Sale de la propuesta',
+        label: 'Quitar de la propuesta',
         type: 'DROPDOWN',
-        items: [{ text: 'Ninguno: añadirlo si cabe', value: '', selected: !seleccion.length }].concat(
+        items: [{ text: 'Ninguno (solo añadir, si cabe)', value: '', selected: !seleccion.length }].concat(
           seleccion.map((t, i) => ({ text: etiqueta(t), value: t.id, selected: i === 0 }))
         ),
       },
@@ -473,7 +511,7 @@ function dialogoCambiarTema(seleccion, fuera, parametros, errores) {
     {
       selectionInput: {
         name: 'entra',
-        label: 'Entra en su lugar',
+        label: 'Añadir en su lugar',
         type: 'DROPDOWN',
         items: fuera.map((t, i) => ({ text: etiqueta(t), value: t.id, selected: i === 0 })),
       },
@@ -490,21 +528,21 @@ function dialogoCambiarTema(seleccion, fuera, parametros, errores) {
 // Diálogo de «Solo uno»: elige el único tema que se queda.
 function dialogoSoloUno(seleccion, parametros) {
   return {
-    header: { title: 'Quedarse con un solo tema' },
+    header: { title: 'Dejar solo un tema' },
     sections: [
       {
         widgets: [
           {
             selectionInput: {
               name: 'queda',
-              label: 'Tema que se queda, con toda la sesión para él',
+              label: 'Tema que se queda (tendrá toda la sesión)',
               type: 'RADIO_BUTTON',
               items: seleccion.map((t, i) => ({ text: `${t.id} · ${t.titulo}`, value: t.id, selected: i === 0 })),
             },
           },
           {
             buttonList: {
-              buttons: [{ text: 'Quedarse con este', onClick: { action: { function: 'aplicarSoloUno', parameters: parametros } } }],
+              buttons: [{ text: 'Dejar solo este', onClick: { action: { function: 'aplicarSoloUno', parameters: parametros } } }],
             },
           },
         ],
@@ -514,11 +552,12 @@ function dialogoSoloUno(seleccion, parametros) {
 }
 
 // Aviso del martes cuando la propuesta no se confirmó.
-function mensajeSinConfirmar(ritual, sesion) {
+function mensajeSinConfirmar(ritual, sesion, porAusencia) {
   return {
     text:
-      `La propuesta de temas para la ${ritual.nombre} del ${fechaLarga(sesion)} sigue sin confirmar. ` +
-      'Esta semana no se pedirá confirmación a los responsables ni se anunciará nada.',
+      (porAusencia || '') +
+      `La propuesta de temas para la ${ritual.nombre} del ${fechaLarga(sesion)} no se ha confirmado, ` +
+      'así que esta semana no habrá anuncio. Los temas siguen en el backlog.',
   };
 }
 
@@ -549,15 +588,16 @@ function mensajePeticionConfirmacion(ritual, propuesta, tema) {
     : { text: 'Lo llevo', onClick: { action: { function: 'confirmarTemaDirecto', parameters: parametros } } };
   return {
     text:
-      `Tu tema ${tema.id} está en la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}: «${tema.titulo}».\n` +
-      `Confírmalo antes de las ${plazo.hora} de hoy. Si no puedes llevarlo, pulsa «No puedo» y entrará otro tema en su lugar.` +
-      (faltaInfo ? '\nAl confirmarlo, completa el contexto y el enlace para que el Chapter llegue preparado.' : ''),
+      `Tu tema «${tema.titulo}» (${tema.id}) entra en la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}.\n` +
+      `Confirma antes de las ${plazo.hora} de hoy que lo llevas preparado: tendrás ${tema.duracion} min.\n` +
+      'Si no puedes, pulsa «No puedo» y se decidirá si otro tema ocupa su lugar. Si no respondes a tiempo, también.' +
+      (faltaInfo ? '\nAl confirmarlo, añade el contexto y el enlace para que el Chapter llegue preparado.' : ''),
     cardsV2: tarjeta_('confirmacion', [
       {
         decoratedText: {
           topLabel: `${tema.id} · ${tema.duracion} min · ${tema.tipo}`,
           text: tema.titulo,
-          bottomLabel: tema.preparacion,
+          bottomLabel: preparacionEnTercera_(tema.preparacion),
           wrapText: true,
         },
       },
@@ -575,7 +615,7 @@ function dialogoConfirmarTema(tema, parametros, errores) {
   const listaErrores = Object.values(errores || {});
   if (listaErrores.length) widgets.push({ textParagraph: { text: `<b>Revisa esto:</b><br>${listaErrores.join('<br>')}` } });
   widgets.push(
-    { textParagraph: { text: `Confirmas que llevas <b>${tema.id} · ${tema.titulo}</b>.` } },
+    { textParagraph: { text: `Confirmas que llevas <b>«${tema.titulo}»</b> (${tema.id}). Añade el contexto y el enlace para que el Chapter llegue preparado. Son opcionales.` } },
     {
       textInput: {
         name: 'contexto',
@@ -588,33 +628,42 @@ function dialogoConfirmarTema(tema, parametros, errores) {
     { textInput: { name: 'enlace', label: 'Enlace (Figma, Jira…)', type: 'SINGLE_LINE', value: tema.enlace || '' } },
     botones_([{ text: 'Confirmar', onClick: { action: { function: 'guardarConfirmacionTema', parameters: parametros } } }])
   );
-  return { header: { title: `Confirmar ${tema.id}` }, sections: [{ widgets }] };
+  return { header: { title: 'Confirmar tu tema' }, sections: [{ widgets }] };
 }
 
 // La petición, ya respondida, sin botones.
 function mensajeConfirmacionRespondida(ritual, propuesta, tema, respuesta) {
   const texto =
     respuesta === CONFIRMACION.confirmado
-      ? `Confirmado: llevas ${tema.id} «${tema.titulo}» a la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}.`
-      : `Hecho: ${tema.id} «${tema.titulo}» no irá a esta sesión y vuelve al backlog.`;
+      ? `Confirmado: llevas «${tema.titulo}» (${tema.id}) a la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}. ` +
+        `Hoy a las ${ritual.hitos.anuncio.hora} se anuncia en el espacio y el Chapter podrá dejarte dudas en el hilo del tema.`
+      : `Entendido: «${tema.titulo}» (${tema.id}) no irá a la sesión del ${fechaLarga(propuesta.sesion)} y vuelve al backlog. ` +
+        'Puedes verlo en /mis-temas.';
   return { text: texto, cardsV2: [] };
 }
 
 // Oferta de sustituto para el organizador (o el suplente). motivo: 'no_puede' | 'sin_respuesta'.
-function mensajeOfertaSustituto(ritual, propuesta, sale, entra, motivo) {
+// porAusencia: texto de textoPorAusencia, si le llega al suplente.
+function mensajeOfertaSustituto(ritual, propuesta, sale, entra, motivo, porAusencia) {
+  const limite = ritual.hitos.anuncio.hora;
   const porque =
-    motivo === CONFIRMACION.noPuede
-      ? `${responsableDe_(sale)} no puede presentar ${sale.id} «${sale.titulo}».`
-      : `${responsableDe_(sale)} no ha confirmado ${sale.id} «${sale.titulo}».`;
+    (porAusencia || '') +
+    (motivo === CONFIRMACION.noPuede
+      ? `${responsableDe_(sale)} no puede presentar «${sale.titulo}» (${sale.id}).`
+      : `${responsableDe_(sale)} no ha confirmado «${sale.titulo}» (${sale.id}).`) +
+    `\nDecide antes de las ${limite}, cuando se anuncia la sesión. Si no sustituyes o no decides, el tema sale de la sesión.`;
   const parametros = parametrosRonda_(propuesta, { sale: sale.id, entra: entra ? entra.id : '' });
   const widgets = [];
   if (entra) {
     widgets.push(
       {
         decoratedText: {
-          topLabel: `Sustituto · ${entra.id} · ${entra.duracion} min · ${entra.tipo}`,
+          topLabel: `Tema que lo sustituiría · ${entra.id} · ${entra.duracion} min · ${entra.tipo}`,
           text: entra.titulo,
-          bottomLabel: `responsable: ${responsableDe_(entra)} · ${entra.preparacion}`,
+          bottomLabel:
+            entra.responsable === sale.responsable
+              ? `responsable: también ${responsableDe_(entra)} · ${preparacionEnTercera_(entra.preparacion)}`
+              : `responsable: ${responsableDe_(entra)} · ${preparacionEnTercera_(entra.preparacion)}`,
           wrapText: true,
         },
       },
@@ -636,8 +685,8 @@ function mensajeOfertaSustituto(ritual, propuesta, sale, entra, motivo) {
 function mensajeSustitucionResuelta(sale, entra) {
   return {
     text: entra
-      ? `Sustituido: ${entra.id} «${entra.titulo}» entra en lugar de ${sale.id}.`
-      : `${sale.id} «${sale.titulo}» sale de la sesión sin sustituto.`,
+      ? `Sustituido: «${entra.titulo}» (${entra.id}) entra en lugar de «${sale.titulo}» (${sale.id}).`
+      : `«${sale.titulo}» (${sale.id}) sale de la sesión sin sustituto.`,
     cardsV2: [],
   };
 }
@@ -646,18 +695,26 @@ function mensajeSustitucionResuelta(sale, entra) {
 function mensajeAvisoSustituto(ritual, propuesta, tema) {
   return {
     text:
-      `Tu tema ${tema.id} «${tema.titulo}» entra en la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)} ` +
-      'como sustituto de otro que no podrá presentarse. Como lo tenías listo, no hace falta que lo confirmes.',
+      `Tu tema «${tema.titulo}» (${tema.id}) entra en la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)} ` +
+      'porque otro tema no podrá presentarse. Como lo tenías listo, no hace falta que lo confirmes. ' +
+      `Se anuncia hoy a las ${ritual.hitos.anuncio.hora}. Si no puedes llevarlo, avisa antes a quien organiza la sesión.`,
   };
 }
 
 // Cuando no queda ningún tema: cancelar la sesión o anunciarla como abierta.
-function mensajeSinTemas(ritual, propuesta) {
+function mensajeSinTemas(ritual, propuesta, porAusencia) {
   const parametros = (decision) => parametrosRonda_(propuesta, { decision });
+  const limite = ritual.hitos.anuncio.hora;
   return {
-    text: `No queda ningún tema confirmado para la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}.`,
+    text: `${porAusencia || ''}No queda ningún tema confirmado para la ${ritual.nombre} del ${fechaLarga(propuesta.sesion)}.`,
     cardsV2: tarjeta_('sin-temas', [
-      { textParagraph: { text: '¿Cancelas la sesión o la anuncias como sesión abierta, sin temas preparados?' } },
+      {
+        textParagraph: {
+          text:
+            `Decide antes de las ${limite}: cancelar la sesión o anunciarla como sesión abierta, sin temas preparados. ` +
+            'Si no decides, no se anunciará nada.',
+        },
+      },
       botones_([
         { text: 'Cancelar la sesión', onClick: { action: { function: 'decidirSinTemas', parameters: parametros('cancelar') } } },
         { text: 'Anunciar sesión abierta', onClick: { action: { function: 'decidirSinTemas', parameters: parametros('abierta') } } },
@@ -670,8 +727,9 @@ function mensajeSinTemasDecidido(decision) {
   return {
     text:
       decision === 'cancelar'
-        ? 'Decidido: esta semana se cancela la sesión. Se avisará en el espacio a la hora del anuncio.'
-        : 'Decidido: la sesión se anunciará como abierta, sin temas preparados.',
+        ? 'Sesión cancelada. Se avisará en el espacio a la hora del anuncio. ' +
+          'El evento del calendario no se toca: quítalo tú si hace falta.'
+        : 'Sesión abierta: se anunciará en el espacio a la hora del anuncio, sin temas preparados.',
     cardsV2: [],
   };
 }
@@ -691,12 +749,12 @@ function antesDeLaSesion(tipo) {
 // Cabecera del anuncio del martes. facilita: nombre (o email) de quien facilita la sesión.
 function mensajeAnuncio(ritual, sesion, temas, facilita) {
   const minutos = temas.reduce((suma, t) => suma + t.duracion, 0);
-  const lista = temas.map((t) => `• ${t.id} «${t.titulo}» · ${responsableDe_(t)} · ${t.duracion} min`).join('\n');
+  const lista = temas.map((t) => `• «${t.titulo}» (${t.id}) · ${responsableDe_(t)} · ${t.duracion} min`).join('\n');
   return {
     text:
-      `${ritual.nombre} del ${fechaLarga(sesion)}. La sesión la facilita ${facilita}.\n` +
-      `Temas (${minutos} min):\n${lista}\n` +
-      'Cada tema tiene su hilo justo debajo: deja ahí tus dudas antes de la sesión.',
+      `${ritual.nombre} del ${fechaLarga(sesion)}. La facilita ${facilita}.\n` +
+      `Temas de la sesión (${minutos} min):\n${lista}\n` +
+      'Cada tema tiene su hilo: deja ahí tus dudas antes de la sesión.',
     cardsV2: tarjeta_('anuncio', [botones_([botonActa_(ritual)])]),
   };
 }
@@ -708,7 +766,7 @@ function mensajeTemaAnunciado(tema) {
       decoratedText: {
         topLabel: `${tema.id} · ${tema.duracion} min · ${tema.tipo}`,
         text: tema.titulo,
-        bottomLabel: `Responsable: ${responsableDe_(tema)}`,
+        bottomLabel: `responsable: ${responsableDe_(tema)}`,
         wrapText: true,
       },
     },
@@ -723,8 +781,8 @@ function mensajeTemaAnunciado(tema) {
 function mensajeSesionAbierta(ritual, sesion, facilita) {
   return {
     text:
-      `${ritual.nombre} del ${fechaLarga(sesion)}: sesión abierta, sin temas preparados. La sesión la facilita ${facilita}.\n` +
-      'Trae lo que tengas entre manos y lo vemos en el momento.',
+      `${ritual.nombre} del ${fechaLarga(sesion)}: esta semana es una sesión abierta, sin temas preparados. La facilita ${facilita}.\n` +
+      'Si quieres comentar algo, tráelo y lo vemos entre todos.',
     cardsV2: tarjeta_('anuncio-abierta', [botones_([botonActa_(ritual)])]),
   };
 }
@@ -740,10 +798,12 @@ function mensajeCancelacion(ritual, sesion, conTemas) {
 }
 
 // Aviso al organizador cuando la sesión desaparece del calendario antes del anuncio.
-function mensajeTemasAplazados(ritual, sesion, ids) {
+// temas: [{ id, titulo }] de los temas seleccionados.
+function mensajeTemasAplazados(ritual, sesion, temas) {
+  const lista = temas.map((t) => (t.titulo ? `«${t.titulo}» (${t.id})` : t.id)).join(', ');
   return {
     text:
       `La ${ritual.nombre} del ${fechaLarga(sesion)} ya no está en el calendario. ` +
-      `Los temas seleccionados (${ids.join(', ')}) vuelven al backlog con preferencia para la próxima sesión.`,
+      `Los temas seleccionados (${lista}) vuelven al backlog con preferencia para la próxima sesión.`,
   };
 }

@@ -293,6 +293,7 @@ section.alt { background: var(--surface); }
   letter-spacing: .3px; text-transform: uppercase; white-space: nowrap;
 }
 .stepper-tag--info { background: var(--info-light); color: var(--info); border: 1px solid rgba(9,138,195,.22); }
+.stepper-tag--pending { background: var(--warning-light); color: var(--warning-dark); border: 1px solid rgba(143,76,19,.25); margin-left: 6px; }
 
 /* ─── TABS ───────────────────────────────────────────────────────── */
 .tabs { width: 100%; }
@@ -521,23 +522,23 @@ footer strong { color: rgba(255,255,255,0.60); font-weight: 600; }
 La Design Review <span class="accent">se prepara casi sola</span>
 </h1>
 <p class="hero-lede sub-reveal" style="animation-delay:400ms">
-Una app de Google Chat que lleva cada tema de la Design Review de principio a fin: desde que alguien lo propone hasta que sus acuerdos quedan en el acta. Cada responsable responde de su tema, y jcoto (o Fer, cuando jcoto no está) solo recibe las excepciones.
+Una app de Google Chat que lleva cada tema de la Design Review de principio a fin: desde que alguien lo propone hasta que sus acuerdos quedan en el acta. Cada responsable responde de su tema. Jota confirma la propuesta de temas cada semana y decide las excepciones (o Fer, cuando Jota no está).
 </p>
 <div class="hero-kpi-row">
 <div class="kpi-card">
-<p class="kpi-label"><span aria-hidden="true">🙋</span> Participación</p>
+<p class="kpi-label"><span aria-hidden="true">🙋</span> Objetivo · Participación</p>
 <p class="kpi-value">4 de 5</p>
 <p class="kpi-delta kpi-delta--neutral">PDs proponen un tema</p>
 </div>
 <div class="kpi-card">
-<p class="kpi-label"><span aria-hidden="true">📝</span> Acta a tiempo</p>
+<p class="kpi-label"><span aria-hidden="true">📝</span> Objetivo · Acta a tiempo</p>
 <p class="kpi-value">80 %</p>
 <p class="kpi-delta kpi-delta--neutral">acta validada antes del jueves a las 12:00</p>
 </div>
 <div class="kpi-card">
-<p class="kpi-label"><span aria-hidden="true">⏳</span> Tiempo de espera</p>
+<p class="kpi-label"><span aria-hidden="true">⏳</span> Objetivo · Tiempo de espera</p>
 <p class="kpi-value">6</p>
-<p class="kpi-delta kpi-delta--neutral">semanas como máximo en el backlog</p>
+<p class="kpi-delta kpi-delta--neutral">semanas de espera objetivo en el backlog, sin garantía</p>
 </div>
 </div>
 </div>
@@ -570,7 +571,7 @@ Una app de Google Chat que lleva cada tema de la Design Review de principio a fi
 <div class="section-hd reveal">
 <div class="overline">01 · El problema</div>
 <h2 data-char-reveal data-char-per="25">El proceso manual dejó de usarse: la última nota de la Design Review es de abril de 2026</h2>
-<p>La Design Review dependía de una Sheet que nadie mantenía y de que jcoto lo moviera todo a mano.</p>
+<p>La Design Review dependía de una Sheet que nadie mantenía y de que Jota lo moviera todo a mano.</p>
 </div>
 <div class="trigger-list">
 <div class="trigger-item reveal" style="--i:0">
@@ -598,7 +599,7 @@ Una app de Google Chat que lleva cada tema de la Design Review de principio a fi
 <div class="trigger-item__rank r-warn" aria-hidden="true">⚠</div>
 <div class="trigger-item__body">
 <h4 aria-level="3">Todo dependía de una persona</h4>
-<p>Si jcoto no estaba, la sesión no se preparaba y no quedaba acta.</p>
+<p>Si Jota no estaba, la sesión no se preparaba y no quedaba acta.</p>
 </div>
 </div>
 </div>
@@ -609,8 +610,8 @@ Una app de Google Chat que lleva cada tema de la Design Review de principio a fi
 <div class="wrap">
 <div class="section-hd reveal">
 <div class="overline">02 · La semana de una sesión</div>
-<h2 data-char-reveal data-char-per="25">Seis hitos automáticos, del lunes a las 11:00 al jueves a las 12:00</h2>
-<p>La sesión es el miércoles. La app lanza cada hito a su hora (hora de Madrid). Si esa semana no hay sesión en el calendario, avisa el lunes y no lanza nada más.</p>
+<h2 data-char-reveal data-char-per="25">Seis pasos automáticos, del lunes a las 11:00 al jueves a las 12:00</h2>
+<p>La sesión es el miércoles. La app lanza cada paso a su hora (hora de Madrid). Si esa semana no hay sesión en el calendario, avisa el lunes y no lanza nada más. Los pasos 5 y 6 aún no están disponibles.</p>
 </div>
 <div class="stepper reveal">
 <div class="stepper-step">
@@ -624,8 +625,8 @@ Una app de Google Chat que lleva cada tema de la Design Review de principio a fi
 <div class="stepper-step">
 <div class="stepper-num">2</div>
 <div class="stepper-body">
-<h4 aria-level="3">Propuesta de selección</h4>
-<p>La propuesta le llega a jcoto por mensaje privado: los temas que caben en 60 minutos, ordenados por prioridad. Puede confirmarla, cambiar un tema o dejar solo uno. Sin confirmación no se anuncia nada.</p>
+<h4 aria-level="3">Propuesta de temas</h4>
+<p>La propuesta le llega a Jota por mensaje privado: los temas que caben en 60 minutos, ordenados por prioridad. Puede confirmarla, cambiar un tema o dejar solo uno. Tiene que confirmarla antes del martes a las 11:00: sin confirmación no hay petición a los responsables ni anuncio.</p>
 <span class="stepper-tag stepper-tag--info">Lunes · 13:00</span>
 </div>
 </div>
@@ -633,7 +634,7 @@ Una app de Google Chat que lleva cada tema de la Design Review de principio a fi
 <div class="stepper-num">3</div>
 <div class="stepper-body">
 <h4 aria-level="3">Confirmación de cada responsable</h4>
-<p>Cada responsable confirma que lleva su tema antes de las 11:45. Si alguien no lo ha confirmado, la app le propone a jcoto un sustituto con preparación «Lista».</p>
+<p>Cada responsable confirma que lleva su tema antes de las 11:45. Si alguien no lo ha confirmado, la app le propone a Jota un sustituto con preparación «Lista».</p>
 <span class="stepper-tag stepper-tag--info">Martes · 11:00</span>
 </div>
 </div>
@@ -641,7 +642,7 @@ Una app de Google Chat que lleva cada tema de la Design Review de principio a fi
 <div class="stepper-num">4</div>
 <div class="stepper-body">
 <h4 aria-level="3">Anuncio</h4>
-<p>Mensaje en el espacio con los temas confirmados, un hilo por tema para preparar la sesión y el enlace al acta con los acuerdos anteriores.</p>
+<p>Mensaje en el espacio con los temas confirmados, un hilo por tema para preparar la sesión y el botón «Ver acuerdos anteriores», que abre el acta.</p>
 <span class="stepper-tag stepper-tag--info">Martes · 12:00</span>
 </div>
 </div>
@@ -650,15 +651,56 @@ Una app de Google Chat que lleva cada tema de la Design Review de principio a fi
 <div class="stepper-body">
 <h4 aria-level="3">Borrador de conclusiones</h4>
 <p>Después de la sesión, la app lee las notas de Gemini y el hilo de cada tema, y envía a cada responsable un borrador de conclusiones con resumen, acuerdos y siguientes pasos.</p>
-<span class="stepper-tag stepper-tag--info">Miércoles · tras la sesión</span>
+<span class="stepper-tag stepper-tag--info">Miércoles · tras la sesión</span><span class="stepper-tag stepper-tag--pending">Aún no disponible</span>
 </div>
 </div>
 <div class="stepper-step">
 <div class="stepper-num">6</div>
 <div class="stepper-body">
 <h4 aria-level="3">Validación y acta</h4>
-<p>El responsable valida, aclara o indica que no hubo acuerdo. Solo lo validado entra en el Documento de sesiones, el acta única del ritual.</p>
-<span class="stepper-tag stepper-tag--info">Jueves · 12:00</span>
+<p>El responsable valida, aclara o indica que no hubo acuerdo. Solo lo validado entra en el acta, el documento único y acumulado de todas las sesiones.</p>
+<span class="stepper-tag stepper-tag--info">Jueves · 12:00</span><span class="stepper-tag stepper-tag--pending">Aún no disponible</span>
+</div>
+</div>
+</div>
+<div class="section-hd reveal" style="margin-top: var(--s12);">
+<div class="overline">Si algo falla</div>
+<h2>Qué pasa cuando algo no sale como estaba previsto</h2>
+</div>
+<div class="trigger-list">
+<div class="trigger-item reveal" style="--i:0">
+<div class="trigger-item__rank r-info" aria-hidden="true">1</div>
+<div class="trigger-item__body">
+<h4 aria-level="3">Un responsable pulsa «No puedo»</h4>
+<p>Su tema sale de la sesión y vuelve al backlog. Jota decide si entra un sustituto. Si el responsable no responde antes de las 11:45, se trata igual.</p>
+</div>
+</div>
+<div class="trigger-item reveal" style="--i:1">
+<div class="trigger-item__rank r-info" aria-hidden="true">2</div>
+<div class="trigger-item__body">
+<h4 aria-level="3">No hay sustituto posible</h4>
+<p>Si ningún tema con preparación «Lista» puede ocupar el hueco, Jota recibe el aviso y el tema queda fuera de la sesión.</p>
+</div>
+</div>
+<div class="trigger-item reveal" style="--i:2">
+<div class="trigger-item__rank r-warn" aria-hidden="true">3</div>
+<div class="trigger-item__body">
+<h4 aria-level="3">La sesión se queda sin temas</h4>
+<p>Jota elige cancelar la sesión o anunciarla como sesión abierta antes de las 12:00. Si no decide, no se anuncia nada. Cancelar no toca el evento del calendario.</p>
+</div>
+</div>
+<div class="trigger-item reveal" style="--i:3">
+<div class="trigger-item__rank r-warn" aria-hidden="true">4</div>
+<div class="trigger-item__body">
+<h4 aria-level="3">La sesión desaparece del calendario</h4>
+<p>Los temas que iban a tratarse vuelven al backlog con preferencia para la siguiente sesión.</p>
+</div>
+</div>
+<div class="trigger-item reveal" style="--i:4">
+<div class="trigger-item__rank r-info" aria-hidden="true">5</div>
+<div class="trigger-item__body">
+<h4 aria-level="3">Jota descarta un tema de otra persona</h4>
+<p>Puede hacerlo desde <code>/mis-temas</code>. El tema sale del backlog y no se trata en ninguna sesión.</p>
 </div>
 </div>
 </div>
@@ -677,14 +719,14 @@ Una app de Google Chat que lleva cada tema de la Design Review de principio a fi
 <span class="variant-card__dot" aria-hidden="true"></span>
 <div class="variant-card__icon" aria-hidden="true">🎯</div>
 <h4 aria-level="3">La preparación es un requisito</h4>
-<p>Cada tema declara su preparación: «Lista», «La tendré para la sesión» o «Falta preparación». Un tema con «Falta preparación» nunca entra en la propuesta.</p>
+<p>Cada tema declara su preparación: «Lista», «La tendré para la sesión» o «Falta preparación». Viene marcada por defecto en «La tendré para la sesión». Un tema con «Falta preparación» no entra en la propuesta.</p>
 <span class="variant-tag">Preparación</span>
 </div>
 <div class="variant-card v-alt reveal" style="--i:1">
 <span class="variant-card__dot" aria-hidden="true"></span>
 <div class="variant-card__icon" aria-hidden="true">📈</div>
 <h4 aria-level="3">Ningún tema se queda atrás</h4>
-<p>La prioridad parte de la urgencia (de 1 a 5), que sube un punto cada 3 semanas en el backlog. A igual urgencia gana el tema más antiguo, y los temas aplazados de la sesión anterior van primero.</p>
+<p>La prioridad parte de la urgencia (de 1 a 5), que sube un punto cada 3 semanas que el tema espera, hasta 5. A igual urgencia gana el tema más antiguo, y los temas aplazados de la sesión anterior van primero.</p>
 <span class="variant-tag">Prioridad</span>
 </div>
 <div class="variant-card v-info reveal" style="--i:2">
@@ -702,24 +744,24 @@ Una app de Google Chat que lleva cada tema de la Design Review de principio a fi
 <div class="wrap">
 <div class="section-hd reveal">
 <div class="overline">04 · Quién hace qué</div>
-<h2 data-char-reveal data-char-per="25">El responsable lleva su tema; jcoto y Fer solo deciden las excepciones</h2>
-<p>La app reconoce a cada persona por su email. Todo se hace desde Google Chat, con dos comandos y los botones de cada mensaje.</p>
+<h2 data-char-reveal data-char-per="25">El responsable lleva su tema; Jota confirma la propuesta y decide las excepciones</h2>
+<p>La app reconoce a cada persona por su email. Todo se hace desde Google Chat, con dos comandos y los botones de cada mensaje. Los avisos privados llegan por el chat con la app: cada persona tiene que abrir un chat con «Rituales del Chapter UX» para recibirlos.</p>
 </div>
 <div class="resources-grid">
 <div class="resource-card reveal" style="--i:0">
 <div class="resource-card__icon" aria-hidden="true">🙋</div>
 <h4 aria-level="3">Responsable del tema</h4>
-<p>Suele ser quien propone el tema con <code>/tema</code> (título, tipo de feedback y duración). Consulta y edita sus temas con <code>/mis-temas</code>, confirma que lo lleva, lo presenta y valida sus conclusiones.</p>
+<p>Suele ser quien propone el tema con <code>/tema</code>. Campos obligatorios: título, tipo de feedback y duración. El campo responsable solo lo ven el organizador y el suplente. Opcionales: urgencia, preparación, contexto y enlace. Consulta y edita sus temas con <code>/mis-temas</code>, confirma que lo lleva, lo presenta y valida sus conclusiones.</p>
 </div>
 <div class="resource-card reveal" style="--i:1">
 <div class="resource-card__icon" aria-hidden="true">🧭</div>
-<h4 aria-level="3">Jota Coto, como organizador</h4>
-<p>Confirma o ajusta la propuesta del lunes, decide los sustitutos y puede asignar un tema a otra persona. Esa persona pasa a ser su responsable, recibe un aviso privado y no puede rechazarlo.</p>
+<h4 aria-level="3">Jota, como organizador</h4>
+<p>Confirma la propuesta cada lunes, antes del martes a las 11:00 (sin eso no hay petición a los responsables ni anuncio), y decide las excepciones, como los sustitutos. También puede asignar un tema a otra persona, que pasa a ser su responsable y recibe un aviso privado. No puede rechazar la asignación, pero sí declinar una sesión concreta con «No puedo».</p>
 </div>
 <div class="resource-card reveal" style="--i:2">
 <div class="resource-card__icon" aria-hidden="true">🤝</div>
 <h4 aria-level="3">Fer, como suplente</h4>
-<p>Cuando jcoto tiene en su calendario un evento de fuera de la oficina, la propuesta y las excepciones le llegan a Fer, que asume sus funciones.</p>
+<p>Cuando Jota tiene en su calendario un evento de fuera de la oficina, la propuesta y las excepciones le llegan a Fer, que confirma la propuesta y decide las excepciones en su lugar.</p>
 </div>
 </div>
 </div>
@@ -741,12 +783,12 @@ Una app de Google Chat que lleva cada tema de la Design Review de principio a fi
 <div class="resource-card reveal" style="--i:1">
 <div class="resource-card__icon" aria-hidden="true">🗂️</div>
 <h4 aria-level="3">Servicio del registro</h4>
-<p>Es una aplicación web que se ejecuta con la cuenta de jcoto. Todas las altas y cambios pasan por ella, así que el Chapter solo necesita acceso de lectura al registro de temas, que está protegido.</p>
+<p>Es una aplicación web que se ejecuta con la cuenta de Jota. Todas las altas y cambios pasan por ella, así que el Chapter solo necesita acceso de lectura al registro de temas, que está protegido.</p>
 </div>
 <div class="resource-card reveal" style="--i:2">
 <div class="resource-card__icon" aria-hidden="true">⏱️</div>
-<h4 aria-level="3">Disparador de hitos</h4>
-<p>Se ejecuta cada 5 minutos, también con la cuenta de jcoto, y lanza el hito que toca. Lee las sesiones del calendario por el ID de la serie, nunca por el título.</p>
+<h4 aria-level="3">Disparador de pasos</h4>
+<p>Se ejecuta cada 5 minutos, también con la cuenta de Jota, y lanza el paso que toca. Lee las sesiones del calendario por el ID de la serie, nunca por el título.</p>
 </div>
 </div>
 <div class="callout reveal">
@@ -790,7 +832,7 @@ Una app de Google Chat que lleva cada tema de la Design Review de principio a fi
 </div>
 <div class="yn-card__body">
 <ul class="yn-list">
-<li>Ausencia de jcoto y traspaso a Fer</li>
+<li>Ausencia de Jota y traspaso a Fer</li>
 <li>Confirmación de los responsables y sustitutos</li>
 <li>Anuncio con un hilo por tema</li>
 <li>Borrador de conclusiones con Vertex AI</li>
@@ -812,13 +854,13 @@ Una app de Google Chat que lleva cada tema de la Design Review de principio a fi
 </div>
 <div class="meta-card__body">
 <p class="meta-quote">
-La app solo pasa a DELUX cuando un ciclo completo funciona en pruebas, <strong>de la convocatoria del lunes al acta del jueves</strong>, con la ausencia de jcoto incluida y todos los textos revisados por Ana.
+La app solo pasa a DELUX cuando un ciclo completo funciona en pruebas, <strong>de la convocatoria del lunes al acta del jueves</strong>, con la ausencia de Jota incluida y todos los textos revisados por Ana.
 </p>
 <div class="meta-attr">
 <div class="meta-avatar" aria-hidden="true">👤</div>
 <div class="meta-info">
 <div class="meta-info__role">Owner del proyecto · Fer como co-owner</div>
-<div class="meta-info__name">Jota Coto · Head of UX</div>
+<div class="meta-info__name">Jota · Head of UX</div>
 </div>
 </div>
 </div>

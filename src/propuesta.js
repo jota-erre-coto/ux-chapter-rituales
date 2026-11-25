@@ -54,7 +54,8 @@ function revisarConfirmacionPropuesta_(ritual, { sesion, lunes }) {
   const propuesta = leerPropuesta_(claveDeRitual_(ritual), lunes);
   if (propuesta && propuesta.estado === 'confirmada') return;
   const destinatario = destinatarioGestion(ritual, organizadorAusente_(ritual, { sinCache: true }));
-  enviarPrivadoPorEmail_(ritual, destinatario, mensajeSinConfirmar(ritual, sesion));
+  const porAusencia = textoPorAusencia(ritual, destinatario, nombresDelEspacio_(ritual));
+  enviarPrivadoPorEmail_(ritual, destinatario, mensajeSinConfirmar(ritual, sesion, porAusencia));
 }
 
 // Vuelve a pintar la tarjeta de la propuesta con su estado actual.

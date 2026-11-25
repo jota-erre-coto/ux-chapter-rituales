@@ -23,6 +23,7 @@ function montar({ propuesta, fallaHiloDe = null, aplazarFalla = false }) {
     organizadorAusente_: () => false,
     nombresDelEspacio_: () => ({}),
     conNombres: (temas) => temas,
+    textoPorAusencia: () => "",
     destinatarioGestion: (r) => r.organizador,
     publicarEnEspacio_: (e, m) => (estado.publicados.push(m), { name: `msg-${estado.publicados.length}` }),
     publicarEnHilo_: (e, clave, m) => {

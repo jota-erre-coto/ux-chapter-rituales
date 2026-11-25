@@ -118,9 +118,9 @@ test('la propuesta pendiente muestra los temas, los minutos, el plazo y los tres
   );
   assert.match(mensaje.text, /miércoles 25 de noviembre/);
   const pie = JSON.stringify(mensaje.cardsV2);
-  assert.match(pie, /45 de 60 minutos/);
-  assert.match(pie, /Sustitutos si alguien no confirma: DR-003/);
-  assert.match(pie, /antes del martes a las 11:00/);
+  assert.match(pie, /Ocupan 45 de los 60 minutos/);
+  assert.match(pie, /Sustitutos si alguien no confirma: «Tag» \(DR-003\)/);
+  assert.match(pie, /Confírmala antes del martes a las 11:00/);
   assert.match(pie, /aplazado de la sesión anterior/);
   assert.deepEqual(botonesDe(mensaje), ['Confirmar', 'Cambiar tema', 'Dejar solo uno']);
 });
@@ -129,7 +129,7 @@ test('la propuesta confirmada no tiene botones y una vacía solo deja añadir', 
   const mensajePropuesta = conPrioridad('mensajePropuesta');
   const base = { claveRitual: 'pruebas', lunes: '2026-11-23', sesion: '2026-11-25' };
   const confirmada = mensajePropuesta(ritualPropuesta, Object.assign({ estado: 'confirmada', confirmadaPor: 'Jota' }, base), [temaPropuesto({})], [], '2026-11-23');
-  assert.match(confirmada.text, /confirmada por Jota/);
+  assert.match(confirmada.text, /^Propuesta confirmada para la/);
   assert.deepEqual(botonesDe(confirmada), []);
   const vacia = mensajePropuesta(ritualPropuesta, Object.assign({ estado: 'pendiente' }, base), [], [], '2026-11-23');
   assert.deepEqual(botonesDe(vacia), ['Añadir tema']);
@@ -139,7 +139,7 @@ test('cada tema de /mis-temas muestra su fecha de alta', () => {
   const tema = { id: 'DR-001', titulo: 'Tag', estado: 'propuesto', tipo: 'Informar', duracion: 15,
     urgencia: 3, preparacion: 'Lista', fechaAlta: '2026-11-03', responsable: 'atoca@civitatis.com' };
   const tarjeta = conPrioridad('dialogoMisTemas')([tema], [], '2026-11-18', () => ({}));
-  assert.equal(tarjeta.sections[0].widgets[0].decoratedText.topLabel, 'DR-001 · 3 nov 2026 · propuesto');
+  assert.equal(tarjeta.sections[0].widgets[0].decoratedText.topLabel, 'DR-001 · creado el 3 nov 2026 · propuesto');
 });
 
 test('si la propuesta llega al suplente, dice por qué', () => {
@@ -148,7 +148,7 @@ test('si la propuesta llega al suplente, dice por qué', () => {
     { claveRitual: 'pruebas', lunes: '2026-11-23', sesion: '2026-11-25', estado: 'pendiente', enSustitucion: true },
     [temaPropuesto({})], [], '2026-11-23'
   );
-  assert.match(JSON.stringify(mensaje.cardsV2), /porque jcoto@civitatis.com está fuera de la oficina/);
+  assert.match(mensaje.text, /^Te llega a ti porque jcoto@civitatis.com está fuera de la oficina/);
 });
 
 test('la propuesta nombra a las personas por su nombre si lo conoce', () => {
@@ -163,7 +163,7 @@ test('la propuesta nombra a las personas por su nombre si lo conoce', () => {
   const pie = JSON.stringify(mensaje.cardsV2);
   assert.match(pie, /responsable: Ana Toca/);
   assert.match(pie, /responsable: otra@civitatis.com/);
-  assert.match(pie, /porque Jota Coto está fuera de la oficina/);
+  assert.match(mensaje.text, /porque Jota Coto está fuera de la oficina/);
 });
 
 test('la propuesta no menciona el plazo de confirmación si ya ha pasado', () => {
@@ -171,12 +171,12 @@ test('la propuesta no menciona el plazo de confirmación si ya ha pasado', () =>
   const propuesta = { claveRitual: 'pruebas', lunes: '2026-11-23', sesion: '2026-11-25', estado: 'pendiente' };
   const elMartes = JSON.stringify(mensajePropuesta(ritualPropuesta, propuesta, [temaPropuesto({})], [], '2026-11-24').cardsV2);
   const elMiercoles = JSON.stringify(mensajePropuesta(ritualPropuesta, propuesta, [temaPropuesto({})], [], '2026-11-25').cardsV2);
-  assert.match(elMartes, /antes del martes a las 11:00/);
-  assert.doesNotMatch(elMiercoles, /Si no la confirmas/);
+  assert.match(elMartes, /Confírmala antes del martes a las 11:00/);
+  assert.doesNotMatch(elMiercoles, /Confírmala/);
 });
 
 const conRonda = cargar('dominio.js', 'prioridad.js', 'confirmacion.js', 'mensajes.js');
-const ritualRonda = { nombre: 'Design Review', hitos: { plazoSustitucion: { dia: 2, hora: '11:45' } } };
+const ritualRonda = { nombre: 'Design Review', hitos: { plazoSustitucion: { dia: 2, hora: '11:45' }, anuncio: { dia: 2, hora: '12:00' } } };
 const propuestaRonda = { claveRitual: 'pruebas', lunes: '2026-11-23', sesion: '2026-11-25' };
 const botonesTarjeta = (m) => {
   const w = m.cardsV2[0].card.sections[0].widgets.find((x) => x.buttonList);
@@ -197,10 +197,10 @@ test('la oferta de sustituto lleva Sustituir, o solo quitar si no hay sustituto'
   const oferta = conRonda('mensajeOfertaSustituto');
   const sale = temaPropuesto({ id: 'DR-1' });
   const con = oferta(ritualRonda, propuestaRonda, sale, temaPropuesto({ id: 'DR-5' }), 'no_puede');
-  assert.match(con.text, /no puede presentar DR-1/);
+  assert.match(con.text, /no puede presentar «.*» \(DR-1\)/);
   assert.deepEqual(botonesTarjeta(con).map((b) => b.text), ['Sustituir', 'No sustituir']);
   const sin = oferta(ritualRonda, propuestaRonda, sale, null, 'pendiente');
-  assert.match(sin.text, /no ha confirmado DR-1/);
+  assert.match(sin.text, /no ha confirmado «Tag» \(DR-1\)/);
   assert.deepEqual(botonesTarjeta(sin).map((b) => b.text), ['Quitarlo de la sesión']);
 });
 
@@ -215,9 +215,9 @@ const ritualAnuncio = { nombre: 'Design Review', actaId: 'ACTA' };
 test('el anuncio dice fecha, quién facilita, los temas y enlaza el acta', () => {
   const m = conAnuncio('mensajeAnuncio')(ritualAnuncio, '2026-11-25',
     [temaPropuesto({ id: 'DR-1' }), temaPropuesto({ id: 'DR-2', duracion: 15 })], 'jcoto@civitatis.com');
-  assert.match(m.text, /miércoles 25 de noviembre\. La sesión la facilita jcoto@civitatis\.com/);
-  assert.match(m.text, /Temas \(45 min\)/);
-  assert.match(m.text, /DR-2 «Tag» · atoca@civitatis\.com · 15 min/);
+  assert.match(m.text, /miércoles 25 de noviembre\. La facilita jcoto@civitatis\.com/);
+  assert.match(m.text, /Temas de la sesión \(45 min\)/);
+  assert.match(m.text, /«Tag» \(DR-2\) · atoca@civitatis\.com · 15 min/);
   const boton = m.cardsV2[0].card.sections[0].widgets[0].buttonList.buttons[0];
   assert.equal(boton.onClick.openLink.url, 'https://docs.google.com/document/d/ACTA/edit');
 });
