@@ -78,7 +78,8 @@ function enviarTema(event) {
   }
   const tema = resultado.tema;
   if (!tema.asignado) return cerrarConMensaje_(textoTemaGuardado(tema), event);
-  return cerrarConMensaje_(textoTemaAsignado(tema, resultado.avisado), event);
+  const [conNombre] = conNombres([tema], nombresDelEspacio_(ritual));
+  return cerrarConMensaje_(textoTemaAsignado(conNombre, resultado.avisado), event);
 }
 
 // Miembros del espacio del ritual a los que esta persona puede asignar temas, o null
@@ -139,9 +140,14 @@ function volverAMisTemas(event) {
 
 function construirMisTemas_(ritual, actor) {
   const hoy = Utilities.formatDate(new Date(), ritual.zonaHoraria, 'yyyy-MM-dd');
-  const temas = leerTemas_(ritual).filter((tema) => tema.estado !== ESTADOS.descartado);
-  const propios = temas.filter((tema) => tema.responsable === actor.email);
   const gestiona = [ritual.organizador, ritual.suplente].includes(actor.email);
+  let temas = leerTemas_(ritual).filter((tema) => tema.estado !== ESTADOS.descartado);
+  // Los nombres solo hacen falta si se muestran otras personas: temas ajenos (quien
+  // gestiona) o quién te asignó un tema.
+  if (gestiona || temas.some((t) => t.responsable === actor.email && t.asignado)) {
+    temas = conNombres(temas, nombresDelEspacio_(ritual));
+  }
+  const propios = temas.filter((tema) => tema.responsable === actor.email);
   const otros = gestiona
     ? temas.filter((tema) => tema.responsable !== actor.email && puedeDescartar(tema, actor, ritual))
     : [];

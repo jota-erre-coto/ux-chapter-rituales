@@ -61,7 +61,7 @@ function ofrecerSustituto_(ritual, claveRitual, lunes, saleId) {
   const propuesta = leerPropuesta_(claveRitual, lunes);
   // Un tema solo tiene una oferta abierta a la vez.
   if ((propuesta.ofertas || {})[saleId]) return;
-  const temas = leerTemas_(ritual);
+  const temas = conNombres(leerTemas_(ritual), nombresDelEspacio_(ritual));
   const sale = temas.find((t) => t.id === saleId);
   if (!sale) return;
   const entra = elegirSustituto(temas, propuesta, saleId, hoyDe_(ritual), ritual.duracionSesionMin);
@@ -70,7 +70,7 @@ function ofrecerSustituto_(ritual, claveRitual, lunes, saleId) {
   const enviado = enviarPrivadoPorEmail_(
     ritual,
     destinatario,
-    mensajeOfertaSustituto(ritual, propuesta, sale, entra, motivo)
+    mensajeOfertaSustituto(ritual, propuesta, sale, entra, motivo, textoPorAusencia(ritual, destinatario, nombresDelEspacio_(ritual)))
   );
   if (!enviado) throw new Error(`No se ha podido ofrecer sustituto a ${destinatario}.`);
   modificarPropuesta_(claveRitual, lunes, (p) => {
@@ -88,7 +88,8 @@ function preguntarSiSinTemas_(ritual, claveRitual, lunes) {
   const ofertasAbiertas = propuesta.ids.some((id) => (propuesta.ofertas || {})[id]);
   if (!sesionSinTemas(propuesta) || ofertasAbiertas) return;
   const destinatario = destinatarioGestion(ritual, organizadorAusente_(ritual, { sinCache: true }));
-  const enviado = enviarPrivadoPorEmail_(ritual, destinatario, mensajeSinTemas(ritual, propuesta));
+  const porAusencia = textoPorAusencia(ritual, destinatario, nombresDelEspacio_(ritual));
+  const enviado = enviarPrivadoPorEmail_(ritual, destinatario, mensajeSinTemas(ritual, propuesta, porAusencia));
   if (!enviado) throw new Error(`No se ha podido preguntar a ${destinatario} qué hacer sin temas.`);
   modificarPropuesta_(claveRitual, lunes, (p) => Object.assign(p, { preguntadoSinTemas: true }));
 }

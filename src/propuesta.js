@@ -29,12 +29,14 @@ function hoyDe_(ritual) {
 function lanzarPropuesta_(ritual, { sesion, lunes }) {
   const claveRitual = claveDeRitual_(ritual);
   const hoy = hoyDe_(ritual);
-  const temas = leerTemas_(ritual);
+  const nombres = nombresDelEspacio_(ritual);
+  const temas = conNombres(leerTemas_(ritual), nombres);
   const { seleccion } = proponerSeleccion(temas, hoy, ritual.duracionSesionMin);
   const destinatario = destinatarioGestion(ritual, organizadorAusente_(ritual, { sinCache: true }));
   const propuesta = {
     claveRitual, lunes, sesion, ids: seleccion.map((t) => t.id), estado: 'pendiente',
     enSustitucion: destinatario !== ritual.organizador,
+    organizadorNombre: nombres[ritual.organizador] || ritual.organizador,
   };
   const enviado = enviarPrivadoPorEmail_(
     ritual,
@@ -52,13 +54,14 @@ function revisarConfirmacionPropuesta_(ritual, { sesion, lunes }) {
   const propuesta = leerPropuesta_(claveDeRitual_(ritual), lunes);
   if (propuesta && propuesta.estado === 'confirmada') return;
   const destinatario = destinatarioGestion(ritual, organizadorAusente_(ritual, { sinCache: true }));
-  enviarPrivadoPorEmail_(ritual, destinatario, mensajeSinConfirmar(ritual, sesion));
+  const porAusencia = textoPorAusencia(ritual, destinatario, nombresDelEspacio_(ritual));
+  enviarPrivadoPorEmail_(ritual, destinatario, mensajeSinConfirmar(ritual, sesion, porAusencia));
 }
 
 // Vuelve a pintar la tarjeta de la propuesta con su estado actual.
 function repintarPropuesta_(ritual, propuesta) {
   const hoy = hoyDe_(ritual);
-  const temas = leerTemas_(ritual);
+  const temas = conNombres(leerTemas_(ritual), nombresDelEspacio_(ritual));
   const seleccion = propuesta.ids.map((id) => temas.find((t) => t.id === id)).filter(Boolean);
   return mensajePropuesta(ritual, propuesta, seleccion, sustitutosPara(temas, seleccion, hoy), hoy);
 }

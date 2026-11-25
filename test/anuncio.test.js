@@ -21,6 +21,9 @@ function montar({ propuesta, fallaHiloDe = null, aplazarFalla = false }) {
     leerTemas_: () => [tema('DR-1'), tema('DR-2')],
     claveDeRitual_: () => 'dr',
     organizadorAusente_: () => false,
+    nombresDelEspacio_: () => ({}),
+    conNombres: (temas) => temas,
+    textoPorAusencia: () => "",
     destinatarioGestion: (r) => r.organizador,
     publicarEnEspacio_: (e, m) => (estado.publicados.push(m), { name: `msg-${estado.publicados.length}` }),
     publicarEnHilo_: (e, clave, m) => {

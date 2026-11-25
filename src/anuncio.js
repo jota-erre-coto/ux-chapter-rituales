@@ -12,7 +12,9 @@ function anunciar_(ritual, { sesion, lunes }) {
   if (!propuesta || propuesta.estado !== 'confirmada') return;
   // Un anuncio a medias (falló a mitad) se completa sin repetir lo ya publicado.
   if (propuesta.anuncio && propuesta.anuncio.completo !== false) return;
-  const facilita = destinatarioGestion(ritual, organizadorAusente_(ritual, { sinCache: true }));
+  const nombres = nombresDelEspacio_(ritual);
+  const gestiona = destinatarioGestion(ritual, organizadorAusente_(ritual, { sinCache: true }));
+  const facilita = nombres[gestiona] || gestiona;
   const confirmados = propuesta.confirmaciones ? temasConfirmados(propuesta) : [];
 
   if (!confirmados.length) {
@@ -27,7 +29,7 @@ function anunciar_(ritual, { sesion, lunes }) {
     return;
   }
 
-  const temas = leerTemas_(ritual);
+  const temas = conNombres(leerTemas_(ritual), nombres);
   const anunciados = confirmados.map((id) => temas.find((t) => t.id === id)).filter(Boolean);
   const guardarAnuncio = (anuncio) => modificarPropuesta_(claveRitual, lunes, (p) => Object.assign(p, { anuncio }));
   let anuncio = propuesta.anuncio;
@@ -73,7 +75,12 @@ function revisarCancelacion_(ritual, { lunes, sesiones, hoy }) {
     publicarEnEspacio_(ritual.espacio, mensajeCancelacion(ritual, propuesta.sesion, propuesta.ids.length > 0));
   } else if (propuesta.ids.length) {
     const destinatario = destinatarioGestion(ritual, organizadorAusente_(ritual, { sinCache: true }));
-    enviarPrivadoPorEmail_(ritual, destinatario, mensajeTemasAplazados(ritual, propuesta.sesion, propuesta.ids));
+    const temas = leerTemas_(ritual);
+    const temasAplazados = propuesta.ids.map((id) => temas.find((t) => t.id === id) || { id });
+    const porAusencia = textoPorAusencia(ritual, destinatario, nombresDelEspacio_(ritual));
+    enviarPrivadoPorEmail_(ritual, destinatario, {
+      text: porAusencia + mensajeTemasAplazados(ritual, propuesta.sesion, temasAplazados).text,
+    });
   }
   modificarPropuesta_(claveRitual, lunes, (p) => Object.assign(p, { cancelada: true }));
 }
