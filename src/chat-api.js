@@ -132,3 +132,14 @@ function pedir_(url, token, cuerpo, metodo) {
   if (codigo >= 300) throw new Error(`HTTP ${codigo} en ${url.split('?')[0]}: ${respuesta.getContentText()}`);
   return JSON.parse(respuesta.getContentText() || '{}');
 }
+
+// { email: nombre } de los miembros del espacio del ritual, para los textos. Si no se
+// pueden leer, devuelve {} y los textos nombran a cada persona por su email.
+function nombresDelEspacio_(ritual) {
+  try {
+    return Object.fromEntries(miembrosDelEspacio_(ritual.espacio).map((p) => [p.email, p.nombre]));
+  } catch (error) {
+    console.error(`No se han podido leer los nombres del espacio: ${error.stack}`);
+    return {};
+  }
+}

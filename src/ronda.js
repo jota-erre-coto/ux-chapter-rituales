@@ -61,7 +61,7 @@ function ofrecerSustituto_(ritual, claveRitual, lunes, saleId) {
   const propuesta = leerPropuesta_(claveRitual, lunes);
   // Un tema solo tiene una oferta abierta a la vez.
   if ((propuesta.ofertas || {})[saleId]) return;
-  const temas = leerTemas_(ritual);
+  const temas = conNombres(leerTemas_(ritual), nombresDelEspacio_(ritual));
   const sale = temas.find((t) => t.id === saleId);
   if (!sale) return;
   const entra = elegirSustituto(temas, propuesta, saleId, hoyDe_(ritual), ritual.duracionSesionMin);

@@ -38,6 +38,8 @@ function montar({ temas, propuesta, envioFalla = () => false, actualizarFalla = 
     claveDeRitual_: () => 'dr',
     hoyDe_: () => '2026-11-24',
     organizadorAusente_: () => false,
+    nombresDelEspacio_: () => ({}),
+    conNombres: (temas) => temas,
     destinatarioGestion: (r, aus) => (aus ? r.suplente : r.organizador),
     revisarConfirmacionPropuesta_: () => {},
     actualizarMensaje_: () => {},

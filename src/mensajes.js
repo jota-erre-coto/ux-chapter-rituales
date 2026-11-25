@@ -160,12 +160,32 @@ function textoAvisoAsignacion(tema, quienAsigna) {
   );
 }
 
+// Nombres de las personas en los textos. nombres: { email: nombre } de los miembros
+// del espacio; a quien no esté (o si no se han podido leer) se le nombra por su email.
+function conNombres(temas, nombres) {
+  return temas.map((t) =>
+    Object.assign({}, t, {
+      responsableNombre: nombres[t.responsable] || t.responsable,
+      proponenteNombre: nombres[t.proponente] || t.proponente,
+    })
+  );
+}
+
+function responsableDe_(tema) {
+  return tema.responsableNombre || tema.responsable;
+}
+
+function proponenteDe_(tema) {
+  return tema.proponenteNombre || tema.proponente;
+}
+
 // Respuesta a quien asigna, según se haya podido avisar o no al responsable.
 function textoTemaAsignado(tema, avisado) {
+  const quien = responsableDe_(tema);
   const aviso = avisado
-    ? `Se ha avisado a ${tema.responsable} por mensaje privado.`
-    : `No se ha podido avisar a ${tema.responsable}: todavía no ha abierto un chat con la app. Avísale tú.`;
-  return `Tema ${tema.id} asignado a ${tema.responsable}: «${tema.titulo}».\n${aviso}`;
+    ? `Se ha avisado a ${quien} por mensaje privado.`
+    : `No se ha podido avisar a ${quien}: todavía no ha abierto un chat con la app. Avísale tú.`;
+  return `Tema ${tema.id} asignado a ${quien}: «${tema.titulo}».\n${aviso}`;
 }
 
 function textoTemaEditado(tema) {
@@ -183,8 +203,8 @@ function seccionTema_(tema, hoy, permisos, mostrarResponsable) {
     `urgencia ${urgenciaEfectiva(tema, hoy)}`,
     tema.preparacion,
   ];
-  if (mostrarResponsable) detalle.unshift(tema.responsable);
-  if (tema.asignado) detalle.push(`asignado por ${tema.proponente}`);
+  if (mostrarResponsable) detalle.unshift(responsableDe_(tema));
+  if (tema.asignado) detalle.push(`asignado por ${proponenteDe_(tema)}`);
   const botones = [];
   const parametros = [{ key: 'id', value: tema.id }];
   if (permisos.editar)
@@ -339,6 +359,13 @@ function dialogoLanzarHito(hitos) {
   };
 }
 
+// Fecha 'AAAA-MM-DD' de un hito ({ dia: 1 = lunes }) en la semana que empieza en lunes.
+function fechaDeHito_(lunes, cuando) {
+  const d = new Date(`${lunes}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + cuando.dia - 1);
+  return d.toISOString().slice(0, 10);
+}
+
 // Día de la semana de un hito ({ dia: 1 = lunes }) para los textos.
 function diaDeHito_(cuando) {
   return DIAS_SEMANA[cuando.dia % 7];
@@ -373,7 +400,7 @@ function mensajePropuesta(ritual, propuesta, seleccion, sustitutos, hoy) {
     });
   }
   seleccion.forEach((t) => {
-    const detalle = [`responsable: ${t.responsable}`, `urgencia ${urgenciaEfectiva(t, hoy)}`, t.preparacion];
+    const detalle = [`responsable: ${responsableDe_(t)}`, `urgencia ${urgenciaEfectiva(t, hoy)}`, t.preparacion];
     if (t.preferencia) detalle.push('aplazado de la sesión anterior');
     sections.push({
       widgets: [
@@ -391,10 +418,11 @@ function mensajePropuesta(ritual, propuesta, seleccion, sustitutos, hoy) {
 
   const pie = [`${minutos} de ${ritual.duracionSesionMin} minutos.`];
   if (propuesta.enSustitucion && !confirmada) {
-    pie.unshift(`Te llega a ti porque ${ritual.organizador} está fuera de la oficina.`);
+    pie.unshift(`Te llega a ti porque ${propuesta.organizadorNombre || ritual.organizador} está fuera de la oficina.`);
   }
   if (sustitutos.length) pie.push(`Sustitutos si alguien no confirma: ${sustitutos.map((t) => t.id).join(', ')}.`);
-  if (!confirmada) {
+  // Si el plazo ya ha pasado (una propuesta lanzada a mano), no se menciona.
+  if (!confirmada && hoy <= fechaDeHito_(propuesta.lunes, plazo)) {
     pie.push(
       `Si no la confirmas antes del ${diaDeHito_(plazo)} a las ${plazo.hora}, no se pedirá confirmación a nadie ni se anunciará nada.`
     );
@@ -576,8 +604,8 @@ function mensajeConfirmacionRespondida(ritual, propuesta, tema, respuesta) {
 function mensajeOfertaSustituto(ritual, propuesta, sale, entra, motivo) {
   const porque =
     motivo === CONFIRMACION.noPuede
-      ? `${sale.responsable} no puede presentar ${sale.id} «${sale.titulo}».`
-      : `${sale.responsable} no ha confirmado ${sale.id} «${sale.titulo}».`;
+      ? `${responsableDe_(sale)} no puede presentar ${sale.id} «${sale.titulo}».`
+      : `${responsableDe_(sale)} no ha confirmado ${sale.id} «${sale.titulo}».`;
   const parametros = parametrosRonda_(propuesta, { sale: sale.id, entra: entra ? entra.id : '' });
   const widgets = [];
   if (entra) {
@@ -586,7 +614,7 @@ function mensajeOfertaSustituto(ritual, propuesta, sale, entra, motivo) {
         decoratedText: {
           topLabel: `Sustituto · ${entra.id} · ${entra.duracion} min · ${entra.tipo}`,
           text: entra.titulo,
-          bottomLabel: `responsable: ${entra.responsable} · ${entra.preparacion}`,
+          bottomLabel: `responsable: ${responsableDe_(entra)} · ${entra.preparacion}`,
           wrapText: true,
         },
       },
@@ -660,10 +688,10 @@ function antesDeLaSesion(tipo) {
   return ANTES_DE_LA_SESION[tipo] || 'Echa un vistazo al contexto y al enlace antes de la sesión.';
 }
 
-// Cabecera del anuncio del martes. facilita: email de quien facilita la sesión.
+// Cabecera del anuncio del martes. facilita: nombre (o email) de quien facilita la sesión.
 function mensajeAnuncio(ritual, sesion, temas, facilita) {
   const minutos = temas.reduce((suma, t) => suma + t.duracion, 0);
-  const lista = temas.map((t) => `• ${t.id} «${t.titulo}» · ${t.responsable} · ${t.duracion} min`).join('\n');
+  const lista = temas.map((t) => `• ${t.id} «${t.titulo}» · ${responsableDe_(t)} · ${t.duracion} min`).join('\n');
   return {
     text:
       `${ritual.nombre} del ${fechaLarga(sesion)}. La sesión la facilita ${facilita}.\n` +
@@ -680,7 +708,7 @@ function mensajeTemaAnunciado(tema) {
       decoratedText: {
         topLabel: `${tema.id} · ${tema.duracion} min · ${tema.tipo}`,
         text: tema.titulo,
-        bottomLabel: `Responsable: ${tema.responsable}`,
+        bottomLabel: `Responsable: ${responsableDe_(tema)}`,
         wrapText: true,
       },
     },

@@ -151,6 +151,30 @@ test('si la propuesta llega al suplente, dice por qué', () => {
   assert.match(JSON.stringify(mensaje.cardsV2), /porque jcoto@civitatis.com está fuera de la oficina/);
 });
 
+test('la propuesta nombra a las personas por su nombre si lo conoce', () => {
+  const nombres = { 'atoca@civitatis.com': 'Ana Toca', 'jcoto@civitatis.com': 'Jota Coto' };
+  const temas = conPrioridad('conNombres')([temaPropuesto({}), temaPropuesto({ responsable: 'otra@civitatis.com' })], nombres);
+  const mensaje = conPrioridad('mensajePropuesta')(
+    Object.assign({ organizador: 'jcoto@civitatis.com' }, ritualPropuesta),
+    { claveRitual: 'pruebas', lunes: '2026-11-23', sesion: '2026-11-25', estado: 'pendiente',
+      enSustitucion: true, organizadorNombre: 'Jota Coto' },
+    temas, [], '2026-11-23'
+  );
+  const pie = JSON.stringify(mensaje.cardsV2);
+  assert.match(pie, /responsable: Ana Toca/);
+  assert.match(pie, /responsable: otra@civitatis.com/);
+  assert.match(pie, /porque Jota Coto está fuera de la oficina/);
+});
+
+test('la propuesta no menciona el plazo de confirmación si ya ha pasado', () => {
+  const mensajePropuesta = conPrioridad('mensajePropuesta');
+  const propuesta = { claveRitual: 'pruebas', lunes: '2026-11-23', sesion: '2026-11-25', estado: 'pendiente' };
+  const elMartes = JSON.stringify(mensajePropuesta(ritualPropuesta, propuesta, [temaPropuesto({})], [], '2026-11-24').cardsV2);
+  const elMiercoles = JSON.stringify(mensajePropuesta(ritualPropuesta, propuesta, [temaPropuesto({})], [], '2026-11-25').cardsV2);
+  assert.match(elMartes, /antes del martes a las 11:00/);
+  assert.doesNotMatch(elMiercoles, /Si no la confirmas/);
+});
+
 const conRonda = cargar('dominio.js', 'prioridad.js', 'confirmacion.js', 'mensajes.js');
 const ritualRonda = { nombre: 'Design Review', hitos: { plazoSustitucion: { dia: 2, hora: '11:45' } } };
 const propuestaRonda = { claveRitual: 'pruebas', lunes: '2026-11-23', sesion: '2026-11-25' };
