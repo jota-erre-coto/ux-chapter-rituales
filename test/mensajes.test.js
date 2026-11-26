@@ -139,7 +139,8 @@ test('cada tema de /mis-temas muestra su fecha de alta', () => {
   const tema = { id: 'DR-001', titulo: 'Tag', estado: 'propuesto', tipo: 'Informar', duracion: 15,
     urgencia: 3, preparacion: 'Lista', fechaAlta: '2026-11-03', responsable: 'atoca@civitatis.com' };
   const tarjeta = conPrioridad('dialogoMisTemas')([tema], [], '2026-11-18', () => ({}));
-  assert.equal(tarjeta.sections[0].widgets[0].decoratedText.topLabel, 'DR-001 · creado el 3 nov 2026 · propuesto');
+  assert.equal(tarjeta.sections[0].widgets[0].decoratedText.topLabel, 'DR-001 · creado el 3 nov 2026');
+  assert.match(tarjeta.sections[0].widgets[0].decoratedText.text, /^<b>Tag<\/b><br>.*Propuesto/);
 });
 
 test('si la propuesta llega al suplente, dice por qué', () => {
@@ -244,4 +245,45 @@ test('la cancelación avisa de que los temas pasan con preferencia solo si los h
   const cancelar = conAnuncio('mensajeCancelacion');
   assert.match(cancelar(ritualAnuncio, '2026-11-25', true).text, /pasan con preferencia/);
   assert.doesNotMatch(cancelar(ritualAnuncio, '2026-11-25', false).text, /preferencia/);
+});
+
+const temaMis = (extra) => Object.assign({ id: 'DR-001', titulo: 'Tag', estado: 'propuesto', tipo: 'Informar', duracion: 15,
+  urgencia: 3, preparacion: 'Lista', fechaAlta: '2026-11-03', responsable: 'atoca@civitatis.com' }, extra);
+
+test('/mis-temas pone arriba los temas seleccionados', () => {
+  const tarjeta = conPrioridad('dialogoMisTemas')(
+    [temaMis({}), temaMis({ id: 'DR-002', titulo: 'Filtros', estado: 'seleccionado' })], [], '2026-11-03', () => ({})
+  );
+  assert.match(tarjeta.sections[0].widgets[0].decoratedText.text, /Filtros/);
+});
+
+test('quien gestiona ve el selector, con «Mis temas» activo por defecto', () => {
+  const otro = temaMis({ id: 'DR-009', responsable: 'mlopez@civitatis.com', responsableNombre: 'Marcos',
+    asignado: true, proponente: 'jcoto@civitatis.com', proponenteNombre: 'Jota' });
+  const dialogo = conPrioridad('dialogoMisTemas');
+  const mios = dialogo([temaMis({})], [otro], '2026-11-03', () => ({}), 'mios', true);
+  const selector = mios.sections[0].widgets[0].buttonList.buttons;
+  assert.equal(JSON.stringify(selector.map((b) => [b.text, b.type])), JSON.stringify([['Mis temas (1)', 'FILLED'], ['Resto del Chapter (1)', 'OUTLINED']]));
+  assert.match(mios.sections[1].widgets[0].decoratedText.text, /Tag/);
+  const otros = dialogo([temaMis({})], [otro], '2026-11-03', () => ({ descartar: true }), 'otros', true);
+  const tarjetaOtro = otros.sections.find((s) => s.widgets[0].decoratedText);
+  assert.equal(tarjetaOtro.widgets[0].decoratedText.bottomLabel, 'Lo lleva Marcos · se lo asignó Jota');
+  const descartar = tarjetaOtro.widgets.find((w) => w.buttonList).buttonList.buttons[0];
+  assert.equal(descartar.type, 'BORDERLESS');
+  assert.deepEqual(descartar.onClick.action.parameters.find((p) => p.key === 'vista').value, 'otros');
+});
+
+test('sin gestión no hay selector y el tema asignado dice quién lo asignó', () => {
+  const tarjeta = conPrioridad('dialogoMisTemas')(
+    [temaMis({ asignado: true, proponente: 'jcoto@civitatis.com', proponenteNombre: 'Jota' })], [], '2026-11-03', () => ({ editar: true })
+  );
+  assert.equal(tarjeta.sections[0].widgets[0].decoratedText.bottomLabel, 'Te lo asignó Jota');
+  assert.equal(tarjeta.sections[0].widgets.find((w) => w.buttonList).buttonList.buttons[0].type, 'OUTLINED');
+});
+
+test('al volver de descartar se conserva la vista', () => {
+  const dialogo = conPrioridad('dialogoConfirmarDescarte')(temaMis({}), 'otros');
+  const [descartar, volver] = dialogo.sections[0].widgets[1].buttonList.buttons;
+  assert.equal(descartar.type, 'FILLED');
+  assert.equal(volver.onClick.action.parameters[0].value, 'otros');
 });

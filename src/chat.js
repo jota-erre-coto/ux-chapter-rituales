@@ -121,7 +121,7 @@ function guardarEdicion(event) {
 function pedirDescarte(event) {
   const contexto = contextoBoton_(event);
   if (contexto.error) return cerrarConMensaje_(contexto.error, event);
-  return actualizarDialogo_(dialogoConfirmarDescarte(contexto.tema));
+  return actualizarDialogo_(dialogoConfirmarDescarte(contexto.tema, vistaDe_(event)));
 }
 
 function descartarMiTema(event) {
@@ -135,10 +135,19 @@ function descartarMiTema(event) {
 function volverAMisTemas(event) {
   const ritual = ritualDelEspacio_((event.chat.buttonClickedPayload || {}).space);
   if (!ritual) return cerrarConMensaje_('Este espacio no tiene ningún ritual configurado.', event);
-  return actualizarDialogo_(construirMisTemas_(ritual, actorDe_(event)));
+  return actualizarDialogo_(construirMisTemas_(ritual, actorDe_(event), vistaDe_(event)));
 }
 
-function construirMisTemas_(ritual, actor) {
+// Selector de /mis-temas: «Mis temas» o «Resto del Chapter».
+function cambiarVistaMisTemas(event) {
+  return volverAMisTemas(event);
+}
+
+function vistaDe_(event) {
+  return (event.commonEventObject.parameters || {}).vista || VISTAS_MIS_TEMAS.mios;
+}
+
+function construirMisTemas_(ritual, actor, vista) {
   const hoy = Utilities.formatDate(new Date(), ritual.zonaHoraria, 'yyyy-MM-dd');
   const gestiona = [ritual.organizador, ritual.suplente].includes(actor.email);
   let temas = leerTemas_(ritual).filter((tema) => tema.estado !== ESTADOS.descartado);
@@ -155,7 +164,7 @@ function construirMisTemas_(ritual, actor) {
     editar: puedeEditar(tema, actor),
     descartar: puedeDescartar(tema, actor, ritual),
   });
-  return dialogoMisTemas(propios, otros, hoy, permisos);
+  return dialogoMisTemas(propios, otros, hoy, permisos, vista || VISTAS_MIS_TEMAS.mios, gestiona);
 }
 
 // Ritual y tema de un botón con parámetro id, o el error que hay que mostrar.

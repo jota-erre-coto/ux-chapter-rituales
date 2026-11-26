@@ -112,28 +112,95 @@ function textoTemaGuardado(tema) {
   );
 }
 
+// Colores de la paleta base de Odisea (foundations/colors). Se usan los tonos oscuros
+// para que el texto y los botones rellenos pasen contraste AA sobre blanco. Chat solo
+// admite color en el texto y en los botones rellenos: ni tipografía ni radios.
+const COLORES_ = {
+  marca: '#C2044B', // Pink 700
+  textoSecundario: '#666666', // Neutral 600
+  exito: '#00825B', // Green 700
+  info: '#055A80', // Blue 900
+  aviso: '#C2044B', // Pink 700
+  error: '#C53F37', // Red 700
+};
+
+// Cómo se pinta cada estado en /mis-temas, y en qué orden: lo que va a sesión, arriba.
+const ESTILO_ESTADO_ = {
+  [ESTADOS.seleccionado]: { orden: 0, icono: 'event_available', color: 'exito' },
+  [ESTADOS.reabierto]: { orden: 1, icono: 'replay', color: 'aviso' },
+  [ESTADOS.propuesto]: { orden: 2, icono: 'schedule', color: 'info' },
+  [ESTADOS.tratado]: { orden: 3, icono: 'task_alt', color: 'textoSecundario' },
+  [ESTADOS.resuelto]: { orden: 4, icono: 'check_circle', color: 'textoSecundario' },
+};
+const ESTILO_POR_DEFECTO_ = { orden: 9, icono: 'description', color: 'textoSecundario' };
+
+const VISTAS_MIS_TEMAS = { mios: 'mios', otros: 'otros' };
+
 // Diálogo de /mis-temas. propios: temas de los que la persona es responsable.
-// otros: resto del backlog abierto, solo para el organizador y el suplente.
+// otros: resto del backlog abierto, solo para el organizador y el suplente; si hay,
+// un selector arriba cambia entre las dos vistas. vista: VISTAS_MIS_TEMAS, por defecto mios.
 // permisos(tema) devuelve { editar, descartar } para pintar solo los botones válidos.
-function dialogoMisTemas(propios, otros, hoy, permisos) {
+function dialogoMisTemas(propios, otros, hoy, permisos, vista, verOtros) {
+  const enOtros = verOtros && vista === VISTAS_MIS_TEMAS.otros;
   const sections = [];
-  if (!propios.length) {
-    sections.push({
-      widgets: [{ textParagraph: { text: 'No tienes temas propios. Usa /tema para proponer uno.' } }],
-    });
+  if (verOtros) sections.push(selectorVista_(enOtros ? VISTAS_MIS_TEMAS.otros : VISTAS_MIS_TEMAS.mios, propios.length, otros.length));
+  const temas = ordenarPorEstado_(enOtros ? otros : propios);
+  if (enOtros && temas.length) {
+    sections.push(parrafo_(gris_('Puedes descartar los temas que dejen de tener sentido.')));
   }
-  propios.forEach((tema) => sections.push(seccionTema_(tema, hoy, permisos(tema))));
-  if (otros.length) {
-    sections.push({
-      header: 'Temas del resto del Chapter',
-      widgets: [{ textParagraph: { text: 'Puedes descartarlos si dejan de tener sentido.' } }],
-    });
-    otros.forEach((tema) => sections.push(seccionTema_(tema, hoy, permisos(tema), true)));
+  if (!temas.length) {
+    sections.push(parrafo_(enOtros
+      ? 'Ahora mismo no hay temas de otras personas del Chapter.'
+      : 'Todavía no tienes temas. Usa /tema para proponer el primero.'));
   }
+  const vistaActual = enOtros ? VISTAS_MIS_TEMAS.otros : VISTAS_MIS_TEMAS.mios;
+  temas.forEach((tema) => sections.push(seccionTema_(tema, hoy, permisos(tema), enOtros, vistaActual)));
   return { header: { title: 'Mis temas' }, sections };
 }
 
-function dialogoConfirmarDescarte(tema) {
+function selectorVista_(vista, nPropios, nOtros) {
+  const opcion = (valor, texto) => {
+    const activa = vista === valor;
+    return Object.assign(
+      {
+        text: texto,
+        type: activa ? 'FILLED' : 'OUTLINED',
+        onClick: { action: { function: 'cambiarVistaMisTemas', parameters: [{ key: 'vista', value: valor }] } },
+      },
+      activa ? { color: colorRgb_(COLORES_.marca) } : {}
+    );
+  };
+  return {
+    widgets: [{
+      buttonList: {
+        buttons: [
+          opcion(VISTAS_MIS_TEMAS.mios, `Mis temas (${nPropios})`),
+          opcion(VISTAS_MIS_TEMAS.otros, `Resto del Chapter (${nOtros})`),
+        ],
+      },
+    }],
+  };
+}
+
+function ordenarPorEstado_(temas) {
+  const orden = (t) => (ESTILO_ESTADO_[t.estado] || ESTILO_POR_DEFECTO_).orden;
+  return temas.slice().sort((a, b) => orden(a) - orden(b));
+}
+
+function parrafo_(texto) {
+  return { widgets: [{ textParagraph: { text: texto } }] };
+}
+
+function gris_(texto) {
+  return `<font color="${COLORES_.textoSecundario}">${texto}</font>`;
+}
+
+function colorRgb_(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return { red: ((n >> 16) & 255) / 255, green: ((n >> 8) & 255) / 255, blue: (n & 255) / 255, alpha: 1 };
+}
+
+function dialogoConfirmarDescarte(tema, vista) {
   return {
     header: { title: 'Descartar tema' },
     sections: [
@@ -149,9 +216,20 @@ function dialogoConfirmarDescarte(tema) {
               buttons: [
                 {
                   text: 'Descartar',
+                  type: 'FILLED',
+                  color: colorRgb_(COLORES_.error),
                   onClick: { action: { function: 'descartarMiTema', parameters: [{ key: 'id', value: tema.id }] } },
                 },
-                { text: 'Volver', onClick: { action: { function: 'volverAMisTemas' } } },
+                {
+                  text: 'Volver',
+                  type: 'BORDERLESS',
+                  onClick: {
+                    action: {
+                      function: 'volverAMisTemas',
+                      parameters: [{ key: 'vista', value: vista || VISTAS_MIS_TEMAS.mios }],
+                    },
+                  },
+                },
               ],
             },
           },
@@ -227,38 +305,51 @@ function textoTemaDescartado(tema) {
   return `Tema ${tema.id} descartado: «${tema.titulo}».`;
 }
 
-function seccionTema_(tema, hoy, permisos, mostrarResponsable) {
+// Tarjeta de un tema en /mis-temas: título y estado primero, después quién lo lleva y
+// quién lo asignó, el detalle en gris y los botones (Editar con borde, Descartar sin él).
+function seccionTema_(tema, hoy, permisos, ajeno, vista) {
+  const estilo = ESTILO_ESTADO_[tema.estado] || ESTILO_POR_DEFECTO_;
+  const estado = tema.estado.charAt(0).toUpperCase() + tema.estado.slice(1);
   const detalle = [
     tema.tipo,
     `${tema.duracion} min`,
     `urgencia ${urgenciaEfectiva(tema, hoy)}`,
     preparacionEnTercera_(tema.preparacion),
-  ];
-  if (mostrarResponsable) detalle.unshift(responsableDe_(tema));
-  if (tema.asignado) detalle.push(`asignado por ${proponenteDe_(tema)}`);
+  ].join(' · ');
+  const cabecera = {
+    startIcon: { materialIcon: { name: estilo.icono } },
+    topLabel: tema.fechaAlta ? `${tema.id} · creado el ${fechaCorta(tema.fechaAlta)}` : tema.id,
+    text: `<b>${tema.titulo}</b><br><font color="${COLORES_[estilo.color]}"><b>${estado}</b></font>`,
+    wrapText: true,
+  };
+  const autoria = autoriaDe_(tema, ajeno);
+  if (autoria) cabecera.bottomLabel = autoria;
+  const widgets = [{ decoratedText: cabecera }, { textParagraph: { text: gris_(detalle) } }];
+  const parametros = [{ key: 'id', value: tema.id }, { key: 'vista', value: vista || VISTAS_MIS_TEMAS.mios }];
   const botones = [];
-  const parametros = [{ key: 'id', value: tema.id }];
-  if (permisos.editar)
-    botones.push({ text: 'Editar', onClick: { action: { function: 'editarMiTema', parameters: parametros } } });
-  if (permisos.descartar)
+  if (permisos.editar) {
+    botones.push({
+      text: 'Editar',
+      type: 'OUTLINED',
+      onClick: { action: { function: 'editarMiTema', parameters: parametros } },
+    });
+  }
+  if (permisos.descartar) {
     botones.push({
       text: 'Descartar',
+      type: 'BORDERLESS',
       onClick: { action: { function: 'pedirDescarte', parameters: parametros } },
     });
-  const widgets = [
-    {
-      decoratedText: {
-        topLabel: tema.fechaAlta
-          ? `${tema.id} · creado el ${fechaCorta(tema.fechaAlta)} · ${tema.estado}`
-          : `${tema.id} · ${tema.estado}`,
-        text: tema.titulo,
-        bottomLabel: detalle.join(' · '),
-        wrapText: true,
-      },
-    },
-  ];
+  }
   if (botones.length) widgets.push({ buttonList: { buttons: botones } });
   return { widgets };
+}
+
+// Quién lleva el tema y quién se lo asignó, en una línea. Vacía si es tuyo y lo propusiste tú.
+function autoriaDe_(tema, ajeno) {
+  if (!ajeno) return tema.asignado ? `Te lo asignó ${proponenteDe_(tema)}` : '';
+  const lleva = `Lo lleva ${responsableDe_(tema)}`;
+  return tema.asignado ? `${lleva} · se lo asignó ${proponenteDe_(tema)}` : lleva;
 }
 
 function campoResponsable_(asignables, seleccionado, quienPropone) {
